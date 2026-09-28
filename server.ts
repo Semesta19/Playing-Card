@@ -14,7 +14,7 @@ const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json({ limit: '30mb' }));
 
-// Inisialisasi OpenAI Client
+// Inisialisasi OpenAI Client (Hanya gunakan apiKey untuk server resmi)
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -28,9 +28,9 @@ app.post('/api/generate-card', async (req, res) => {
 
     console.log(`[Image API] Generating image with prompt: ${prompt.substring(0, 50)}...`);
 
-    // 1. Memanggil API tanpa parameter response_format yang bikin error
+    // 1. Memanggil API dengan model generasi terbaru OpenAI (gpt-image-2)
     const response = await openai.images.generate({
-      model: "dall-e-2",
+      model: "gpt-image-2",
       prompt: prompt,
       n: 1,
       size: "1024x1024",
@@ -44,13 +44,13 @@ app.post('/api/generate-card', async (req, res) => {
       });
     }
 
-    // 2. Fetch URL gambar dan ubah ke base64 secara manual
-    // Ini memastikan frontend tetap menerima data URI yang seragam
+    // 2. Fetch URL gambar dan ubah ke base64 secara manual 
+    // Ini memastikan frontend tetap menerima data URI yang aman dari blokir CORS
     const imageFetch = await fetch(imageUrl);
     const arrayBuffer = await imageFetch.arrayBuffer();
     const base64Data = Buffer.from(arrayBuffer).toString('base64');
     
-    // Format menjadi URL data (base64) yang siap ditampilkan di tag <img>
+    // Format menjadi URL data (base64) yang siap ditampilkan langsung di tag <img>
     const generatedImageUrl = `data:image/png;base64,${base64Data}`;
 
     return res.json({ imageUrl: generatedImageUrl });
