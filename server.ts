@@ -14,10 +14,11 @@ const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json({ limit: '30mb' }));
 
-// Inisialisasi OpenAI Client (mendukung resmi maupun proxy/custom API)
+// KUNCI PAKSA KE SERVER RESMI OPENAI
+// Ini akan mengabaikan URL nyasar/proxy yang mungkin nyangkut di Vercel
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL || undefined,
+  baseURL: "https://api.openai.com/v1", // <-- Kunci paten di sini
 });
 
 app.post('/api/generate-card', async (req, res) => {
@@ -27,11 +28,11 @@ app.post('/api/generate-card', async (req, res) => {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    console.log(`[Image API] Generating image with prompt...`);
+    console.log(`[Image API] Generating image...`);
 
-    // Memanggil API dengan opsi model yang fleksibel
+    // KUNCI PAKSA KE MODEL DALL-E-2
     const response = await openai.images.generate({
-      model: process.env.OPENAI_MODEL || "dall-e-3",
+      model: "dall-e-2", // <-- Kunci paten di sini
       prompt: prompt,
       n: 1,
       size: "1024x1024",
@@ -40,32 +41,29 @@ app.post('/api/generate-card', async (req, res) => {
     const data = response.data?.[0];
 
     if (!data) {
-      return res.status(500).json({ error: 'API dipanggil, tapi tidak mengembalikan data.' });
+      return res.status(500).json({ error: 'API tidak mengembalikan data.' });
     }
 
     let generatedImageUrl = '';
 
-    // Skenario 1: API mengembalikan URL
+    // Logika otomatis menangani format URL maupun Base64 dari API
     if (data.url) {
       const imageFetch = await fetch(data.url);
       const arrayBuffer = await imageFetch.arrayBuffer();
       const base64Data = Buffer.from(arrayBuffer).toString('base64');
       generatedImageUrl = `data:image/png;base64,${base64Data}`;
-    }
-    // Skenario 2: API langsung mengembalikan base64_json (seperti yang terjadi sekarang)
-    else if (data.b64_json) {
+    } else if (data.b64_json) {
       generatedImageUrl = `data:image/png;base64,${data.b64_json}`;
-    }
-    else {
-      return res.status(500).json({ error: 'Format dari API tidak dikenali (bukan URL/Base64).' });
+    } else {
+      return res.status(500).json({ error: 'Format tidak dikenali.' });
     }
 
     return res.json({ imageUrl: generatedImageUrl });
 
   } catch (error: any) {
-    console.error('Error generating card image with API:', error);
+    console.error('Error API:', error);
     return res.status(500).json({
-      error: error.message || 'Gagal membuat gambar.',
+      error: error.message || 'Gagal memproses gambar',
     });
   }
 });
