@@ -1,0 +1,6 @@
+{
+  "name": "AI Playing Card Generator",
+  "description": "Generate luxurious, custom royal playing cards styled with your reference photo and classic ornate aesthetics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

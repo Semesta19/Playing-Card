@@ -1,0 +1,54 @@
+export type Rank =
+  | 'Ace'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | '9'
+  | '10'
+  | 'Jack'
+  | 'Queen'
+  | 'King'
+  | 'Joker';
+
+export type RankLetter =
+  | 'A'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | '9'
+  | '10'
+  | 'J'
+  | 'Q'
+  | 'K'
+  | '★';
+
+export type Suit = 'Diamond' | 'Heart' | 'Club' | 'Spade' | 'None';
+export type SuitSymbol = '♢' | '♡' | '♧' | '♤' | '★';
+export type SuitColor = 'red' | 'black';
+
+export interface CardOption {
+  id: string;
+  rank: Rank;
+  rankLetter: RankLetter;
+  suit: Suit;
+  suitSymbol: SuitSymbol;
+  suitColor: SuitColor;
+  label: string;
+}
+
+export interface PromptResult {
+  fullPrompt: string;
+  rank: Rank;
+  rankLetter: RankLetter;
+  suit: Suit;
+  suitColor: SuitColor;
+  symbolicObjectDesc: string;
+}
