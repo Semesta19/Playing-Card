@@ -34,7 +34,7 @@ app.post('/api/generate-card', async (req, res) => {
       prompt: prompt,
       n: 1,
       size: "1024x1024",
-      response_format: "b64_json", // Format base64 agar serasi dengan frontend
+      response_format: "b64_json",
     });
 
     const b64Data = response.data?.[0]?.b64_json;
@@ -45,7 +45,7 @@ app.post('/api/generate-card', async (req, res) => {
       });
     }
 
-    // Format output data URL base64 yang siap ditampilkan langsung di tag <img>
+    // Format output data URL base64 yang siap ditampilkan langsung di frontend
     const generatedImageUrl = `data:image/png;base64,${b64Data}`;
 
     return res.json({ imageUrl: generatedImageUrl });
@@ -57,8 +57,8 @@ app.post('/api/generate-card', async (req, res) => {
   }
 });
 
-// Mount Vite middleware in development
-if (process.env.NODE_ENV !== 'production') {
+// Mount Vite middleware HANYA saat development lokal
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   const { createServer: createViteServer } = await import('vite');
   const vite = await createViteServer({
     server: {
@@ -71,14 +71,13 @@ if (process.env.NODE_ENV !== 'production') {
     appType: 'spa',
   });
   app.use(vite.middlewares);
-} else {
-  app.use(express.static(path.join(__dirname, 'dist')));
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+}
+
+// Jalankan listener port lokal HANYA jika BUKAN di serverless Vercel
+if (!process.env.VERCEL) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
   });
 }
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
-});
 export default app;
