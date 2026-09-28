@@ -15,10 +15,10 @@ const PORT = Number(process.env.PORT) || 3000;
 app.use(express.json({ limit: '30mb' }));
 
 // KUNCI PAKSA KE SERVER RESMI OPENAI
-// Ini akan mengabaikan URL nyasar/proxy yang mungkin nyangkut di Vercel
+// Mencegah error jika ada environment URL nyasar di Vercel
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: "https://api.openai.com/v1", // <-- Kunci paten di sini
+  baseURL: "https://api.openai.com/v1", // Jalur resmi OpenAI
 });
 
 app.post('/api/generate-card', async (req, res) => {
@@ -30,9 +30,9 @@ app.post('/api/generate-card', async (req, res) => {
 
     console.log(`[Image API] Generating image...`);
 
-    // KUNCI PAKSA KE MODEL DALL-E-2
+    // MENGGUNAKAN MODEL GENERASI TERBARU (GPT-IMAGE-2)
     const response = await openai.images.generate({
-      model: "dall-e-2", // <-- Kunci paten di sini
+      model: "gpt-image-2", 
       prompt: prompt,
       n: 1,
       size: "1024x1024",
@@ -46,7 +46,7 @@ app.post('/api/generate-card', async (req, res) => {
 
     let generatedImageUrl = '';
 
-    // Logika otomatis menangani format URL maupun Base64 dari API
+    // Logika otomatis yang aman: Menangani format URL maupun Base64 dari API
     if (data.url) {
       const imageFetch = await fetch(data.url);
       const arrayBuffer = await imageFetch.arrayBuffer();
