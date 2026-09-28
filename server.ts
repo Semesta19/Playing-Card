@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import OpenAI, { toFile } from "openai";
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
@@ -23,9 +23,14 @@ const openai = new OpenAI({
   baseURL: "https://api.openai.com/v1",
 });
 
+
 app.post("/api/generate-card", async (req, res) => {
   try {
-    const { prompt } = req.body;
+    const { prompt, image } = req.body;
+
+    // ==============================
+    // VALIDASI PROMPT
+    // ==============================
 
     if (!prompt || typeof prompt !== "string") {
       return res.status(400).json({
@@ -33,35 +38,115 @@ app.post("/api/generate-card", async (req, res) => {
       });
     }
 
-    console.log("[Image API] Generating image...");
+    // ==============================
+    // VALIDASI IMAGE
+    // ==============================
 
-    const response = await openai.images.generate({
+    if (!image || typeof image !== "string") {
+      return res.status(400).json({
+        error: "Reference image is required",
+      });
+    }
+
+    if (!image.startsWith("data:image/")) {
+      return res.status(400).json({
+        error: "Invalid image format",
+      });
+    }
+
+    console.log("[Image API] Generating card...");
+    console.log("[Image API] Reference image received");
+
+
+    // ==============================
+    // CONVERT BASE64 → FILE
+    // ==============================
+
+    const matches = image.match(
+      /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/
+    );
+
+    if (!matches) {
+      return res.status(400).json({
+        error: "Invalid base64 image",
+      });
+    }
+
+    const mimeType = matches[1];
+    const base64Data = matches[2];
+
+    const buffer = Buffer.from(base64Data, "base64");
+
+    const extension =
+      mimeType === "image/png"
+        ? "png"
+        : mimeType === "image/webp"
+        ? "webp"
+        : "jpg";
+
+    const referenceImage = await toFile(
+      buffer,
+      `reference.${extension}`,
+      {
+        type: mimeType,
+      }
+    );
+
+
+    // ==============================
+    // GPT IMAGE 2
+    // ==============================
+
+    const response = await openai.images.edit({
       model: "gpt-image-2",
-      prompt,
-      n: 1,
-      size: "1024x1024",
+
+      image: referenceImage,
+
+      prompt: prompt,
+
+      size: "1024x1536",
+
       quality: "high",
+
       output_format: "png",
     });
 
-    const image = response.data?.[0];
 
-    if (!image?.b64_json) {
-      console.error("Unexpected OpenAI response:", response);
+    // ==============================
+    // GET RESULT
+    // ==============================
+
+    const result = response.data?.[0];
+
+    if (!result?.b64_json) {
+      console.error(
+        "[Image API] Unexpected response:",
+        response
+      );
 
       return res.status(500).json({
         error: "OpenAI tidak mengembalikan gambar.",
       });
     }
 
-    const imageUrl = `data:image/png;base64,${image.b64_json}`;
+
+    const imageUrl =
+      `data:image/png;base64,${result.b64_json}`;
+
+
+    console.log("[Image API] Generation complete");
+
 
     return res.json({
       imageUrl,
     });
 
   } catch (error: any) {
-    console.error("[Image API Error]", error);
+
+    console.error(
+      "[Image API Error]",
+      error
+    );
 
     return res.status(500).json({
       error:
@@ -72,23 +157,31 @@ app.post("/api/generate-card", async (req, res) => {
 });
 
 
-// Vite hanya untuk development lokal
+// ==========================================
+// VITE DEVELOPMENT
+// ==========================================
+
 if (
   process.env.NODE_ENV !== "production" &&
   !process.env.VERCEL
 ) {
-  const { createServer: createViteServer } = await import("vite");
+  const { createServer: createViteServer } =
+    await import("vite");
 
   const vite = await createViteServer({
     server: {
       middlewareMode: true,
       host: "0.0.0.0",
-      hmr: process.env.DISABLE_HMR !== "true",
+
+      hmr:
+        process.env.DISABLE_HMR !== "true",
+
       watch:
         process.env.DISABLE_HMR === "true"
           ? null
           : {},
     },
+
     appType: "spa",
   });
 
@@ -96,13 +189,21 @@ if (
 }
 
 
-// Jalankan server hanya ketika lokal
+// ==========================================
+// LOCAL SERVER
+// ==========================================
+
 if (!process.env.VERCEL) {
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(
-      `Server running on http://0.0.0.0:${PORT}`
-    );
-  });
+
+  app.listen(
+    PORT,
+    "0.0.0.0",
+    () => {
+      console.log(
+        `Server running on http://0.0.0.0:${PORT}`
+      );
+    }
+  );
 }
 
 export default app;
