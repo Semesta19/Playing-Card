@@ -43,8 +43,8 @@ export default function App() {
   const cardRef = useRef<PlayingCardDisplayRef | null>(null);
 
   /**
-   * Main Generate Handler with Nano Banana
-   * Constructs the dynamic prompt string and calls backend Nano Banana API.
+   * Main Generate Handler with GPT
+   * Constructs the dynamic prompt string and calls backend GPT API.
    */
   const handleGenerate = async () => {
     if (isGenerating) return;
@@ -71,7 +71,7 @@ export default function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Gagal memproses gambar dengan Nano Banana');
+        throw new Error(data.error || 'Gagal memproses gambar');
       }
 
       if (data.imageUrl) {

@@ -599,7 +599,7 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
                 Menghasilkan Kartu...
               </span>
               <span className="text-white/70 text-[11px] mt-0.5 font-mono">
-                Nano Banana AI
+                GPT AI
               </span>
             </div>
           )}
