@@ -26,33 +26,39 @@ app.post('/api/generate-card', async (req, res) => {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    console.log(`[OpenAI Image] Generating image with prompt: ${prompt.substring(0, 50)}...`);
+    console.log(`[Image API] Generating image with prompt: ${prompt.substring(0, 50)}...`);
 
-    // Memanggil API Image OpenAI (DALL-E 3)
+    // 1. Memanggil API tanpa parameter response_format yang bikin error
     const response = await openai.images.generate({
       model: "dall-e-3",
       prompt: prompt,
       n: 1,
       size: "1024x1024",
-      response_format: "b64_json",
     });
 
-    const b64Data = response.data?.[0]?.b64_json;
+    const imageUrl = response.data?.[0]?.url;
 
-    if (!b64Data) {
+    if (!imageUrl) {
       return res.status(500).json({
-        error: 'OpenAI tidak mengembalikan gambar.',
+        error: 'API tidak mengembalikan URL gambar.',
       });
     }
 
-    // Format output data URL base64 yang siap ditampilkan langsung di frontend
-    const generatedImageUrl = `data:image/png;base64,${b64Data}`;
+    // 2. Fetch URL gambar dan ubah ke base64 secara manual
+    // Ini memastikan frontend tetap menerima data URI yang seragam
+    const imageFetch = await fetch(imageUrl);
+    const arrayBuffer = await imageFetch.arrayBuffer();
+    const base64Data = Buffer.from(arrayBuffer).toString('base64');
+    
+    // Format menjadi URL data (base64) yang siap ditampilkan di tag <img>
+    const generatedImageUrl = `data:image/png;base64,${base64Data}`;
 
     return res.json({ imageUrl: generatedImageUrl });
+
   } catch (error: any) {
-    console.error('Error generating card image with OpenAI:', error);
+    console.error('Error generating card image with API:', error);
     return res.status(500).json({
-      error: error.message || 'Gagal membuat gambar dengan OpenAI',
+      error: error.message || 'Gagal membuat gambar.',
     });
   }
 });
