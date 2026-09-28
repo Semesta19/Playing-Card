@@ -21,7 +21,7 @@
   "functions": {
     "server.ts": {
       "runtime": "nodejs22.x",
-      "maxDuration": 300
+      "maxDuration": 60
     }
   }
 }
