@@ -104,7 +104,7 @@ app.post("/api/generate-card", async (req, res) => {
 
       prompt: prompt,
 
-      size: "1024x1536",
+      size: "512x512",
 
       quality: "high",
 
