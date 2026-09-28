@@ -116,9 +116,9 @@ export function constructCardPrompt(card: CardOption): PromptResult {
   const { symbolicObjectDesc, suitColor: derivedSuitColor } = getSymbolicObjectDesc(card.suit, card.rank);
   const suitColor = card.suitColor || derivedSuitColor;
 
-  const cardTitle = isJoker
-    ? `the Royal ${card.suitColor === 'red' ? 'Red' : 'Black'} Joker`
-    : `the ${card.rank} of ${card.suit}`;
+  const cardRole = isJoker
+    ? `the Royal ${card.suitColor === 'red' ? 'Red' : 'Black'} Joker card character`
+    : `the ${card.rank} of ${card.suit} card character`;
 
   const costumeDetails = isJoker
     ? `- Luxurious royal court jester and Ottoman-inspired sovereign hybrid costume
@@ -132,7 +132,7 @@ export function constructCardPrompt(card: CardOption): PromptResult {
 - Gold braided aiguillette (fourragère) draped across the chest
 - Gold epaulettes on shoulders
 - Deep maroon/burgundy cape or cloak flowing behind, lined in matching color
-- Ornate headpiece appropriate for royalty, red velvet with gold filigree
+- Ornate royal crown/headpiece appropriate for rank, red velvet with gold filigree
 - Two star-shaped medal badges (white petals, red gemstone center, gold trim) pinned on chest
 - Diamond-shaped red gemstones embedded in gold jewelry/accessories throughout`;
 
@@ -140,32 +140,37 @@ export function constructCardPrompt(card: CardOption): PromptResult {
     ? `Card corners show "JOKER" or star symbol ★ in ${suitColor}, top-left and bottom-right`
     : `Card corners show rank letter ${card.rankLetter} and suit symbol in ${suitColor}, top-left and bottom-right`;
 
-  const fullPrompt = `A luxurious playing card illustration in classic ornate style, portrait of [DESKRIPSI SUBJEK: wajah menyerupai foto referensi terlampir], rendered as : ${cardTitle}.
+  const fullPrompt = `CRITICAL DIRECTIVE: PRESERVE EXACT FACE AND PERSON IDENTITY.
+Strictly retain the exact facial identity, face shape, eyes, eyebrows, nose, mouth, skin tone, facial hair (if present), and gender of the real person in the attached reference image. DO NOT replace the face with a generic fantasy character or swap the person's biological gender. The individual in the reference image MUST be recognizably depicted wearing royal playing card attire as ${cardRole}.
+
 CHARACTER & COSTUME:
 ${costumeDetails}
+
 SYMBOLIC OBJECT:
 - ${symbolicObjectDesc}
 Held centered in both hands at chest level, symmetrical composition
+
 COMPOSITION:
 - Mirrored/double-headed symmetrical design typical of traditional playing cards (upper half upright, lower half inverted, connected at torso)
 - Vertical portrait card format, centered subject
 - ${cornerDetails}
+
 BACKGROUND & BORDER:
 - Cream/ivory card background
 - Ornate gold scrollwork and filigree patterns framing the figure, symmetrical vine and leaf motifs
 - Maroon/burgundy decorative border panels with gold trim on left and right edges
 - Rounded card corners with thin maroon border outline
 - Elegant arched gold frame lines behind the subject's head
+
 COLOR PALETTE:
 - Primary: deep navy blue, maroon/burgundy red, antique gold
 - Accent: cream/ivory background, white medal details
 - Consistent regal, vintage tarot-card aesthetic
-STYLE:
-- Digital illustration, painterly semi-realistic style
-- Fine linework on ornamental gold details
-- Soft realistic facial rendering, sharp intricate embroidery/jewelry details
-- High detail, symmetrical, luxurious, museum-quality card art
-Face reference: match facial features, structure, and likeness closely to the uploaded photo, integrated naturally into the royal costume and pose described above.`;
+
+STYLE & EXECUTION:
+- Digital illustration, painterly semi-realistic royal playing card portrait
+- Fine linework on ornamental gold details and embroidered textures
+- Maintain the facial likeness of the person in the photo accurately, smoothly integrated into the illustrated card style without changing their recognizable facial structure.`;
 
   return {
     fullPrompt,
