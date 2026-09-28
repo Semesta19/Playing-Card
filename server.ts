@@ -1,6 +1,6 @@
+import OpenAI from "openai";
 import express from 'express';
 import dotenv from 'dotenv';
-import { GoogleGenAI } from '@google/genai';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -14,110 +14,45 @@ const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json({ limit: '30mb' }));
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    },
-  },
+// Inisialisasi OpenAI Client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 app.post('/api/generate-card', async (req, res) => {
   try {
-    const { prompt, referenceImage } = req.body;
+    const { prompt } = req.body;
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    const parts: any[] = [];
+    console.log(`[OpenAI Image] Generating image with prompt: ${prompt.substring(0, 50)}...`);
 
-    if (referenceImage && typeof referenceImage === 'string') {
-      let mimeType = 'image/jpeg';
-      let data = referenceImage;
-      if (referenceImage.startsWith('data:')) {
-        const matches = referenceImage.match(/^data:([^;]+);base64,(.+)$/);
-        if (matches) {
-          mimeType = matches[1];
-          data = matches[2];
-        }
-      }
-      parts.push({
-        inlineData: {
-          mimeType,
-          data,
-        },
-      });
-    }
-
-    parts.push({
-      text: prompt,
+    // Memanggil API Image OpenAI (DALL-E 3)
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: prompt,
+      n: 1,
+      size: "1024x1024",
+      response_format: "b64_json", // Format base64 agar serasi dengan frontend
     });
 
-    // Nano Banana model call: gemini-3.1-flash-lite-image -> gemini-3.1-flash-image -> gemini-3-pro-image
-    let response;
-    const modelCandidates = [
-      'gemini-3.1-flash-lite-image',
-      'gemini-3.1-flash-image',
-      'gemini-3-pro-image',
-    ];
+    const b64Data = response.data?.[0]?.b64_json;
 
-    let lastError: any = null;
-    for (const modelName of modelCandidates) {
-      try {
-        console.log(`[Nano Banana] Attempting generation with model: ${modelName}`);
-        response = await ai.models.generateContent({
-          model: modelName,
-          contents: {
-            parts,
-          },
-          config: {
-            imageConfig: {
-              aspectRatio: '3:4',
-            },
-          },
-        });
-        if (response?.candidates?.[0]?.content?.parts?.some((p: any) => p.inlineData?.data)) {
-          break;
-        }
-      } catch (err: any) {
-        console.warn(`[Nano Banana] ${modelName} failed:`, err?.message);
-        lastError = err;
-      }
-    }
-
-    if (!response && lastError) {
-      throw lastError;
-    }
-
-    let generatedImageUrl: string | null = null;
-    let textFeedback: string | null = null;
-
-    const candidate = response?.candidates?.[0];
-    if (candidate?.content?.parts) {
-      for (const part of candidate.content.parts) {
-        if (part.inlineData?.data) {
-          const mime = part.inlineData.mimeType || 'image/png';
-          generatedImageUrl = `data:${mime};base64,${part.inlineData.data}`;
-          break;
-        } else if (part.text) {
-          textFeedback = part.text;
-        }
-      }
-    }
-
-    if (!generatedImageUrl) {
+    if (!b64Data) {
       return res.status(500).json({
-        error: 'Nano Banana tidak mengembalikan gambar.',
-        details: textFeedback || 'No image part returned',
+        error: 'OpenAI tidak mengembalikan gambar.',
       });
     }
+
+    // Format output data URL base64 yang siap ditampilkan langsung di tag <img>
+    const generatedImageUrl = `data:image/png;base64,${b64Data}`;
 
     return res.json({ imageUrl: generatedImageUrl });
   } catch (error: any) {
-    console.error('Error generating card image:', error);
+    console.error('Error generating card image with OpenAI:', error);
     return res.status(500).json({
-      error: error.message || 'Gagal membuat gambar dengan Nano Banana',
+      error: error.message || 'Gagal membuat gambar dengan OpenAI',
     });
   }
 });
