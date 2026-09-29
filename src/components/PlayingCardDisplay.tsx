@@ -427,7 +427,7 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
       <div className="relative group w-full flex justify-center py-1">
         {/* Card Frame */}
         <div
-          className={`relative w-[280px] sm:w-[320px] aspect-[2/3] rounded-[24px] bg-[#FAF7F0] border-4 border-[#5B1420] shadow-[0_12px_36px_rgba(0,0,0,0.14)] overflow-hidden transition-all duration-300 ${
+          className={`relative w-[280px] sm:w-[320px] aspect-[5/7] rounded-[24px] bg-[#FAF7F0] border-4 border-[#5B1420] shadow-[0_12px_36px_rgba(0,0,0,0.14)] overflow-hidden transition-all duration-300 ${
             isGenerating ? 'opacity-80 scale-[0.99] filter blur-[0.5px]' : ''
           }`}
           style={{

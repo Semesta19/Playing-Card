@@ -49,6 +49,125 @@ const compressImage = (
   });
 };
 
+/**
+ * Auto-crop hasil AI: buang margin putih/transparan di sekeliling kartu,
+ * lalu jadikan sudut membulat di luar kartu transparan.
+ * Jika terjadi masalah apa pun, gambar asli dikembalikan apa adanya.
+ */
+const cropToCard = (dataUrl: string): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const W = img.naturalWidth;
+        const H = img.naturalHeight;
+
+        const src = document.createElement('canvas');
+        src.width = W;
+        src.height = H;
+        const sctx = src.getContext('2d', { willReadFrequently: true });
+        if (!sctx) return resolve(dataUrl);
+        sctx.drawImage(img, 0, 0);
+
+        const { data } = sctx.getImageData(0, 0, W, H);
+
+        // Piksel dianggap "latar" jika transparan atau hampir putih
+        const BG_THRESHOLD = 244;
+        const isBg = (i: number) =>
+          data[i + 3] < 10 ||
+          (data[i] >= BG_THRESHOLD &&
+            data[i + 1] >= BG_THRESHOLD &&
+            data[i + 2] >= BG_THRESHOLD);
+
+        // Hitung jumlah piksel konten per baris & kolom (abaikan noise kecil)
+        const rowCount = new Uint32Array(H);
+        const colCount = new Uint32Array(W);
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            if (!isBg((y * W + x) * 4)) {
+              rowCount[y]++;
+              colCount[x]++;
+            }
+          }
+        }
+
+        const MIN_COUNT = 8;
+        let top = 0;
+        let bottom = H - 1;
+        let left = 0;
+        let right = W - 1;
+        while (top < H && rowCount[top] < MIN_COUNT) top++;
+        while (bottom > top && rowCount[bottom] < MIN_COUNT) bottom--;
+        while (left < W && colCount[left] < MIN_COUNT) left++;
+        while (right > left && colCount[right] < MIN_COUNT) right--;
+
+        // Potong 1px ke dalam untuk membuang sisa anti-alias putih di tepi
+        top += 1;
+        left += 1;
+        bottom -= 1;
+        right -= 1;
+
+        const cw = right - left + 1;
+        const ch = bottom - top + 1;
+
+        // Jika hasil deteksi tidak masuk akal, pakai gambar asli
+        if (cw < W * 0.3 || ch < H * 0.3) return resolve(dataUrl);
+
+        const out = document.createElement('canvas');
+        out.width = cw;
+        out.height = ch;
+        const octx = out.getContext('2d', { willReadFrequently: true });
+        if (!octx) return resolve(dataUrl);
+        octx.drawImage(src, left, top, cw, ch, 0, 0, cw, ch);
+
+        // Flood fill dari 4 sudut: latar putih di luar lengkung kartu -> transparan
+        const outData = octx.getImageData(0, 0, cw, ch);
+        const px = outData.data;
+        const visited = new Uint8Array(cw * ch);
+        const stack: number[] = [];
+
+        const pushIfBg = (x: number, y: number) => {
+          if (x < 0 || y < 0 || x >= cw || y >= ch) return;
+          const idx = y * cw + x;
+          if (visited[idx]) return;
+          const i = idx * 4;
+          if (
+            px[i + 3] < 10 ||
+            (px[i] >= BG_THRESHOLD && px[i + 1] >= BG_THRESHOLD && px[i + 2] >= BG_THRESHOLD)
+          ) {
+            visited[idx] = 1;
+            stack.push(idx);
+          }
+        };
+
+        pushIfBg(0, 0);
+        pushIfBg(cw - 1, 0);
+        pushIfBg(0, ch - 1);
+        pushIfBg(cw - 1, ch - 1);
+
+        while (stack.length) {
+          const idx = stack.pop() as number;
+          const x = idx % cw;
+          const y = (idx - x) / cw;
+          px[idx * 4 + 3] = 0; // jadikan transparan
+          pushIfBg(x + 1, y);
+          pushIfBg(x - 1, y);
+          pushIfBg(x, y + 1);
+          pushIfBg(x, y - 1);
+        }
+
+        octx.putImageData(outData, 0, 0);
+        resolve(out.toDataURL('image/png'));
+      } catch (err) {
+        console.error('cropToCard error:', err);
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+};
+
 export default function App() {
   // State for user uploaded reference photo (base64 or object URL)
   const [userImage, setUserImage] = useState<string | null>(null);
@@ -80,7 +199,8 @@ export default function App() {
 
   /**
    * Main Generate Handler
-   * Membuat prompt, mengompres foto referensi, lalu memanggil backend.
+   * Membuat prompt, mengompres foto referensi, memanggil backend,
+   * lalu meng-crop hasil agar pas dengan bentuk kartu.
    */
   const handleGenerate = async () => {
     if (isGenerating) return;
@@ -128,7 +248,9 @@ export default function App() {
       }
 
       if (data.imageUrl) {
-        setAiGeneratedImage(data.imageUrl);
+        // Crop otomatis: buang margin putih di sekeliling kartu
+        const croppedImage = await cropToCard(data.imageUrl);
+        setAiGeneratedImage(croppedImage);
         setGeneratedCard(selectedCard);
         setActiveUserImage(userImage);
       }
