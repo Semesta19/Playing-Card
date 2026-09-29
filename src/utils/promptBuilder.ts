@@ -74,6 +74,29 @@ export const CARD_OPTIONS: CardOption[] = [
   { id: 'Joker_Black', rank: 'Joker', rankLetter: '★', suit: 'None', suitSymbol: '★', suitColor: 'black', label: '[★] Black Joker 🃏' },
 ];
 
+/**
+ * Kustomisasi opsional dari pengguna.
+ * Jika kosong, prompt sama persis seperti default (tema kerajaan Ottoman).
+ */
+export interface CardCustomization {
+  pose?: string;
+  outfit?: string;
+}
+
+/** Batas panjang input kustomisasi (dipakai juga oleh UI) */
+export const CUSTOM_TEXT_MAX_LENGTH = 200;
+
+/** Bersihkan input: rapikan spasi/baris baru, buang tanda kutip ganda, batasi panjang */
+function sanitizeCustomText(value?: string): string {
+  if (!value) return '';
+  return value
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/"/g, "'")
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .slice(0, CUSTOM_TEXT_MAX_LENGTH);
+}
+
 export function getSymbolicObjectDesc(suit: Suit, rank: CardOption['rank']): { symbolicObjectDesc: string; suitColor: 'red' | 'black' } {
   if (rank === 'Joker') {
     return {
@@ -111,16 +134,21 @@ export function getSymbolicObjectDesc(suit: Suit, rank: CardOption['rank']): { s
   }
 }
 
-export function constructCardPrompt(card: CardOption): PromptResult {
+export function constructCardPrompt(card: CardOption, custom?: CardCustomization): PromptResult {
   const isJoker = card.rank === 'Joker';
   const { symbolicObjectDesc, suitColor: derivedSuitColor } = getSymbolicObjectDesc(card.suit, card.rank);
   const suitColor = card.suitColor || derivedSuitColor;
+
+  const customPose = sanitizeCustomText(custom?.pose);
+  const customOutfit = sanitizeCustomText(custom?.outfit);
+  const hasCustom = Boolean(customPose || customOutfit);
 
   const cardRole = isJoker
     ? `the Royal ${card.suitColor === 'red' ? 'Red' : 'Black'} Joker card character`
     : `the ${card.rank} of ${card.suit} card character`;
 
-  const costumeDetails = isJoker
+  // ===== PAKAIAN =====
+  const defaultCostumeDetails = isJoker
     ? `- Luxurious royal court jester and Ottoman-inspired sovereign hybrid costume
 - Bi-color tailored velvet coat (${card.suitColor === 'red' ? 'deep burgundy and gold' : 'midnight black and silver'}) with gold trim
 - Extravagant gold braided aiguillette (fourragère) draped across the chest
@@ -136,9 +164,36 @@ export function constructCardPrompt(card: CardOption): PromptResult {
 - Two star-shaped medal badges (white petals, red gemstone center, gold trim) pinned on chest
 - Diamond-shaped red gemstones embedded in gold jewelry/accessories throughout`;
 
+  const customCostumeDetails = `- CUSTOM OUTFIT requested by the user: "${customOutfit}"
+- Replace the default royal attire with this outfit, drawn in a detailed painterly illustration style with realistic fabric, folds and fine ornamental detail
+- The outfit must be tasteful, fully covering and appropriate for a classic royal playing card
+- Unless the outfit description specifies its own colors, harmonize the outfit with the card palette (deep navy, maroon/burgundy, antique gold)`;
+
+  const costumeDetails = customOutfit ? customCostumeDetails : defaultCostumeDetails;
+
+  // ===== POSE =====
+  const defaultPoseDetails = `Held centered in both hands at chest level, symmetrical composition`;
+
+  const customPoseDetails = `CUSTOM POSE requested by the user: "${customPose}"
+- The pose applies to the upper figure; the lower figure is its exact 180-degree rotated mirror copy
+- Keep the face clearly visible and recognizable, turned toward the viewer as much as the pose allows
+- The symbolic object stays present and clearly visible, held or placed in a way that fits the pose`;
+
+  const poseDetails = customPose ? customPoseDetails : defaultPoseDetails;
+
   const cornerDetails = isJoker
     ? `Card corners show "JOKER" or star symbol ★ in ${suitColor}, top-left and bottom-right`
     : `Card corners show rank letter ${card.rankLetter} and suit symbol in ${suitColor}, top-left and bottom-right`;
+
+  // Penegasan elemen yang tidak boleh berubah (hanya jika ada kustomisasi)
+  const lockedElements = hasCustom
+    ? `
+
+LOCKED ELEMENTS (must remain exactly as specified, do NOT change):
+- The card theme, cream/ivory background, ornate gold scrollwork, maroon/burgundy border panels, arched gold frame, rounded card corners, corner rank/suit markings, and overall color palette stay identical to the design described here
+- Only the ${customPose && customOutfit ? 'pose and outfit' : customPose ? 'pose' : 'outfit'} of the character may differ from the default description
+- The mirrored double-headed playing card composition and the exact face identity of the person in the reference image stay unchanged`
+    : '';
 
   const fullPrompt = `CRITICAL DIRECTIVE: PRESERVE EXACT FACE AND PERSON IDENTITY.
 Strictly retain the exact facial identity, face shape, eyes, eyebrows, nose, mouth, skin tone, facial hair (if present), and gender of the real person in the attached reference image. DO NOT replace the face with a generic fantasy character or swap the person's biological gender. The individual in the reference image MUST be recognizably depicted wearing royal playing card attire as ${cardRole}.
@@ -148,7 +203,7 @@ ${costumeDetails}
 
 SYMBOLIC OBJECT:
 - ${symbolicObjectDesc}
-Held centered in both hands at chest level, symmetrical composition
+${poseDetails}
 
 COMPOSITION:
 - Mirrored/double-headed symmetrical design typical of traditional playing cards (upper half upright, lower half inverted, connected at torso)
@@ -170,7 +225,7 @@ COLOR PALETTE:
 STYLE & EXECUTION:
 - Digital illustration, painterly semi-realistic royal playing card portrait
 - Fine linework on ornamental gold details and embroidered textures
-- Maintain the facial likeness of the person in the photo accurately, smoothly integrated into the illustrated card style without changing their recognizable facial structure.`;
+- Maintain the facial likeness of the person in the photo accurately, smoothly integrated into the illustrated card style without changing their recognizable facial structure.${lockedElements}`;
 
   return {
     fullPrompt,

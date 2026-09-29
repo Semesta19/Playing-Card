@@ -9,9 +9,13 @@ import { CardSelect } from './components/CardSelect';
 import { PlayingCardDisplay, PlayingCardDisplayRef } from './components/PlayingCardDisplay';
 import { ActionToolbar } from './components/ActionToolbar';
 import { PromptInspectorSheet } from './components/PromptInspectorSheet';
-import { CARD_OPTIONS, constructCardPrompt } from './utils/promptBuilder';
+import {
+  CARD_OPTIONS,
+  constructCardPrompt,
+  CUSTOM_TEXT_MAX_LENGTH,
+} from './utils/promptBuilder';
 import { CardOption } from './types';
-import { Loader2, Code2 } from 'lucide-react';
+import { Loader2, Code2, ChevronDown, RotateCcw } from 'lucide-react';
 
 /**
  * Perkecil & kompres foto sebelum dikirim ke server.
@@ -177,6 +181,11 @@ export default function App() {
     CARD_OPTIONS.find((c) => c.id === 'Q_Diamond') || CARD_OPTIONS[0]
   );
 
+  // Kustomisasi opsional: pose & pakaian (kosong = tampilan default)
+  const [customPose, setCustomPose] = useState<string>('');
+  const [customOutfit, setCustomOutfit] = useState<string>('');
+  const [isCustomOpen, setIsCustomOpen] = useState<boolean>(false);
+
   // State for currently displayed/generated card
   const [generatedCard, setGeneratedCard] = useState<CardOption>(selectedCard);
   const [activeUserImage, setActiveUserImage] = useState<string | null>(null);
@@ -197,6 +206,12 @@ export default function App() {
   // Ref to the rendered playing card for downloading and sharing
   const cardRef = useRef<PlayingCardDisplayRef | null>(null);
 
+  const hasCustom = customPose.trim().length > 0 || customOutfit.trim().length > 0;
+
+  // Susun prompt dengan kartu terpilih + kustomisasi saat ini
+  const buildPrompt = (card: CardOption) =>
+    constructCardPrompt(card, { pose: customPose, outfit: customOutfit }).fullPrompt;
+
   /**
    * Main Generate Handler
    * Membuat prompt, mengompres foto referensi, memanggil backend,
@@ -210,9 +225,9 @@ export default function App() {
       return;
     }
 
-    // Construct dynamic prompt string according to the specification
-    const promptData = constructCardPrompt(selectedCard);
-    setCurrentPrompt(promptData.fullPrompt);
+    // Construct dynamic prompt string (termasuk pose & pakaian kustom)
+    const fullPrompt = buildPrompt(selectedCard);
+    setCurrentPrompt(fullPrompt);
 
     setIsGenerating(true);
     setErrorMessage(null);
@@ -227,7 +242,7 @@ export default function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: promptData.fullPrompt,
+          prompt: fullPrompt,
           referenceImage: compressedImage,
         }),
       });
@@ -331,6 +346,11 @@ export default function App() {
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
+  const resetCustom = () => {
+    setCustomPose('');
+    setCustomOutfit('');
+  };
+
   return (
     <main className="min-h-screen bg-[#F2F2F7] flex flex-col justify-start items-center py-6 px-4 font-sans select-none">
       {/* Mobile-sized container mimicking iOS device screen */}
@@ -346,8 +366,7 @@ export default function App() {
           <button
             type="button"
             onClick={() => {
-              const p = constructCardPrompt(selectedCard);
-              setCurrentPrompt(p.fullPrompt);
+              setCurrentPrompt(buildPrompt(selectedCard));
               setIsPromptModalOpen(true);
             }}
             className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-[#8E8E93] hover:text-[#007AFF] hover:bg-[#E5E5EA] rounded-full transition-colors cursor-pointer"
@@ -377,9 +396,95 @@ export default function App() {
             selectedCard={selectedCard}
             onSelectCard={(card) => {
               setSelectedCard(card);
-              setCurrentPrompt(constructCardPrompt(card).fullPrompt);
+              setCurrentPrompt(buildPrompt(card));
             }}
           />
+        </section>
+
+        {/* 3b. Kustomisasi Pose & Pakaian (opsional) */}
+        <section aria-labelledby="custom-section">
+          <div className="bg-white rounded-2xl border border-[#E5E5EA] overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setIsCustomOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3.5 text-left cursor-pointer"
+              aria-expanded={isCustomOpen}
+            >
+              <div className="flex flex-col">
+                <span className="text-[15px] font-semibold text-[#1C1C1E]">
+                  Kustomisasi Pose &amp; Pakaian
+                </span>
+                <span className="text-[12px] text-[#8E8E93]">
+                  {hasCustom
+                    ? 'Aktif — tema & warna kartu tetap sama'
+                    : 'Opsional — kosongkan untuk tampilan default'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {hasCustom && (
+                  <span className="w-2 h-2 rounded-full bg-[#007AFF]" aria-hidden="true" />
+                )}
+                <ChevronDown
+                  className={`w-5 h-5 text-[#8E8E93] transition-transform ${
+                    isCustomOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </div>
+            </button>
+
+            {isCustomOpen && (
+              <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[#E5E5EA] pt-3">
+                {/* Pose */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="custom-pose" className="text-[13px] font-medium text-[#3A3A3C]">
+                    Pose
+                  </label>
+                  <textarea
+                    id="custom-pose"
+                    value={customPose}
+                    onChange={(e) => setCustomPose(e.target.value.slice(0, CUSTOM_TEXT_MAX_LENGTH))}
+                    maxLength={CUSTOM_TEXT_MAX_LENGTH}
+                    rows={2}
+                    placeholder="Contoh: berdiri gagah sambil menghunus pedang ke atas, tersenyum percaya diri"
+                    className="select-text w-full resize-none rounded-xl border border-[#D1D1D6] bg-[#F2F2F7] px-3 py-2.5 text-[16px] leading-snug text-[#1C1C1E] placeholder:text-[#AEAEB2] focus:outline-none focus:border-[#007AFF] focus:bg-white"
+                  />
+                  <span className="text-[11px] text-[#8E8E93] text-right">
+                    {customPose.length}/{CUSTOM_TEXT_MAX_LENGTH}
+                  </span>
+                </div>
+
+                {/* Pakaian */}
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="custom-outfit" className="text-[13px] font-medium text-[#3A3A3C]">
+                    Pakaian
+                  </label>
+                  <textarea
+                    id="custom-outfit"
+                    value={customOutfit}
+                    onChange={(e) => setCustomOutfit(e.target.value.slice(0, CUSTOM_TEXT_MAX_LENGTH))}
+                    maxLength={CUSTOM_TEXT_MAX_LENGTH}
+                    rows={2}
+                    placeholder="Contoh: beskap Jawa hitam dengan blangkon dan keris emas"
+                    className="select-text w-full resize-none rounded-xl border border-[#D1D1D6] bg-[#F2F2F7] px-3 py-2.5 text-[16px] leading-snug text-[#1C1C1E] placeholder:text-[#AEAEB2] focus:outline-none focus:border-[#007AFF] focus:bg-white"
+                  />
+                  <span className="text-[11px] text-[#8E8E93] text-right">
+                    {customOutfit.length}/{CUSTOM_TEXT_MAX_LENGTH}
+                  </span>
+                </div>
+
+                {hasCustom && (
+                  <button
+                    type="button"
+                    onClick={resetCustom}
+                    className="self-start flex items-center gap-1.5 text-[13px] font-medium text-[#007AFF] cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Kembalikan ke default
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </section>
 
         {/* 4. Generate Button */}
