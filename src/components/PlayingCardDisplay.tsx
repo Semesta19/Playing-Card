@@ -1,4 +1,4 @@
-import React, { useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useRef, useState, useImperativeHandle, forwardRef } from 'react';
 import { CardOption } from '../types';
 
 interface PlayingCardDisplayProps {
@@ -13,9 +13,31 @@ export interface PlayingCardDisplayRef {
   getCanvasBlob: () => Promise<Blob | null>;
 }
 
+// Deteksi iPhone / iPad (termasuk iPadOS yang menyamar sebagai Mac)
+const isIOSDevice = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  const isAppleMobile = /iPad|iPhone|iPod/.test(ua);
+  const isIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  return isAppleMobile || isIPadOS;
+};
+
+// Ubah data URL menjadi Blob tanpa fetch (sinkron, aman untuk user-gesture iOS)
+const dataUrlToBlob = (dataUrl: string): Blob => {
+  const [header, base64] = dataUrl.split(',');
+  const mime = /data:(.*?);base64/.exec(header)?.[1] || 'image/png';
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+};
+
 export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardDisplayProps>(
   ({ card, userImage, aiGeneratedImage, isGenerating = false }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+    // Pratinjau untuk simpan manual di iOS (tekan lama -> Simpan ke Foto)
+    const [savePreview, setSavePreview] = useState<string | null>(null);
 
     // High resolution rendering for download
     const renderCardToCanvas = async (exportWidth = 1000, exportHeight = 1500): Promise<HTMLCanvasElement> => {
@@ -390,29 +412,51 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
       ctx.restore();
     };
 
+    /**
+     * Simpan gambar:
+     * - iOS: buka menu bagikan (Simpan Gambar -> Foto). Jika tidak tersedia,
+     *   tampilkan pratinjau untuk simpan manual (tekan lama gambar).
+     * - Lainnya (desktop/Android): download biasa.
+     */
+    const saveImage = async (dataUrl: string, fileName: string) => {
+      if (isIOSDevice()) {
+        try {
+          const blob = dataUrlToBlob(dataUrl);
+          const file = new File([blob], fileName, { type: blob.type || 'image/png' });
+
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: fileName });
+            return;
+          }
+        } catch (err) {
+          // Pengguna menutup menu bagikan -> jangan lakukan apa-apa
+          if ((err as Error)?.name === 'AbortError') return;
+          console.error('Share gagal, pakai pratinjau:', err);
+        }
+        setSavePreview(dataUrl);
+        return;
+      }
+
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
     useImperativeHandle(ref, () => ({
       downloadCard: async (fileName = `PlayingCard-${card.rank}-${card.suit}.png`) => {
         if (aiGeneratedImage) {
-          const link = document.createElement('a');
-          link.download = fileName;
-          link.href = aiGeneratedImage;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          await saveImage(aiGeneratedImage, fileName);
           return;
         }
         const canvas = await renderCardToCanvas(1200, 1800);
-        const link = document.createElement('a');
-        link.download = fileName;
-        link.href = canvas.toDataURL('image/png');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        await saveImage(canvas.toDataURL('image/png'), fileName);
       },
       getCanvasBlob: async (): Promise<Blob | null> => {
         if (aiGeneratedImage) {
-          const res = await fetch(aiGeneratedImage);
-          return await res.blob();
+          return dataUrlToBlob(aiGeneratedImage);
         }
         const canvas = await renderCardToCanvas(1200, 1800);
         return new Promise((resolve) => {
@@ -607,6 +651,39 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
 
         {/* Hidden offscreen canvas for rendering high-res export */}
         <canvas ref={canvasRef} className="hidden" />
+
+        {/* Pratinjau simpan manual (fallback iOS): tekan lama gambar -> Simpan ke Foto */}
+        {savePreview && (
+          <div
+            className="fixed inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-5"
+            onClick={() => setSavePreview(null)}
+          >
+            <p className="text-white text-[15px] font-medium text-center mb-1">
+              Tekan lama gambar, lalu pilih “Simpan ke Foto”
+            </p>
+            <p className="text-white/60 text-[12px] text-center mb-4">
+              Ketuk di luar gambar untuk menutup
+            </p>
+            <img
+              src={savePreview}
+              alt="Kartu untuk disimpan"
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[72vh] max-w-full rounded-2xl shadow-2xl"
+              style={{
+                WebkitTouchCallout: 'default',
+                WebkitUserSelect: 'auto',
+                userSelect: 'auto',
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setSavePreview(null)}
+              className="mt-5 px-6 py-2.5 rounded-full bg-white/15 text-white text-[15px] font-medium cursor-pointer"
+            >
+              Tutup
+            </button>
+          </div>
+        )}
       </div>
     );
   }
