@@ -13,6 +13,42 @@ import { CARD_OPTIONS, constructCardPrompt } from './utils/promptBuilder';
 import { CardOption } from './types';
 import { Loader2, Code2 } from 'lucide-react';
 
+/**
+ * Perkecil & kompres foto sebelum dikirim ke server.
+ * Vercel membatasi body request ~4.5MB, jadi foto HP (base64) harus dikecilkan.
+ */
+const compressImage = (
+  dataUrl: string,
+  maxSize = 1024,
+  quality = 0.88
+): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxSize || height > maxSize) {
+        const ratio = Math.min(maxSize / width, maxSize / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+};
+
 export default function App() {
   // State for user uploaded reference photo (base64 or object URL)
   const [userImage, setUserImage] = useState<string | null>(null);
@@ -43,11 +79,16 @@ export default function App() {
   const cardRef = useRef<PlayingCardDisplayRef | null>(null);
 
   /**
-   * Main Generate Handler with GPT
-   * Constructs the dynamic prompt string and calls backend GPT API.
+   * Main Generate Handler
+   * Membuat prompt, mengompres foto referensi, lalu memanggil backend.
    */
   const handleGenerate = async () => {
     if (isGenerating) return;
+
+    if (!userImage) {
+      setErrorMessage('Upload foto wajah terlebih dahulu agar hasil mengikuti wajah Anda.');
+      return;
+    }
 
     // Construct dynamic prompt string according to the specification
     const promptData = constructCardPrompt(selectedCard);
@@ -57,6 +98,9 @@ export default function App() {
     setErrorMessage(null);
 
     try {
+      // Kompres foto agar lolos batas ukuran request Vercel
+      const compressedImage = await compressImage(userImage);
+
       const response = await fetch('/api/generate-card', {
         method: 'POST',
         headers: {
@@ -64,11 +108,20 @@ export default function App() {
         },
         body: JSON.stringify({
           prompt: promptData.fullPrompt,
-          referenceImage: userImage,
+          referenceImage: compressedImage,
         }),
       });
 
-      const data = await response.json();
+      // Tangani respons non-JSON (mis. 413 / timeout dari Vercel)
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        if (response.status === 413) {
+          throw new Error('Ukuran foto terlalu besar. Coba foto lain yang lebih kecil.');
+        }
+        throw new Error(`Server error (${response.status}). Coba lagi sebentar.`);
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Gagal memproses gambar');
