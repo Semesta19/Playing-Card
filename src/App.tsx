@@ -533,4 +533,90 @@ export default function App() {
                     className="self-start flex items-center gap-1.5 text-[13px] font-medium text-[#007AFF] cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    Kembalikan ke
+                    Kembalikan ke default
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* 4. Generate Button */}
+        <section className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleGenerate}
+            disabled={isGenerating || isQuotaExhausted}
+            className="w-full py-4 px-6 rounded-full bg-[#007AFF] hover:bg-[#0066D6] active:bg-[#0051A8] active:scale-[0.985] text-white font-semibold text-[17px] tracking-tight shadow-[0_4px_14px_rgba(0,122,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Memproses Kartu...</span>
+              </>
+            ) : (
+              <span>Generate Gambar</span>
+            )}
+          </button>
+
+          {/* Info sisa kuota harian */}
+          {quota && quota.remaining > 0 && (
+            <p className="text-center text-[12px] text-[#8E8E93]">
+              Sisa kuota hari ini: <span className="font-semibold text-[#3A3A3C]">{quota.remaining}</span> dari {quota.limit} kartu • reset pukul {quota.resetLabel}
+            </p>
+          )}
+
+          {/* Peringatan kuota habis */}
+          {isQuotaExhausted && quota && (
+            <div
+              role="alert"
+              className="p-3.5 bg-[#FF9500]/10 border border-[#FF9500]/30 rounded-xl text-center animate-fade-in"
+            >
+              <p className="text-[14px] font-semibold text-[#B26A00]">
+                Kuota harian habis
+              </p>
+              <p className="text-[13px] text-[#B26A00] mt-0.5">
+                Maksimal {quota.limit} kartu per hari. Kuota akan reset pada pukul {quota.resetLabel} (sekitar {formatTimeLeft(quota.resetAt)} lagi).
+              </p>
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="p-3 bg-[#FF3B30]/10 border border-[#FF3B30]/20 rounded-xl text-center text-[13px] font-medium text-[#FF3B30] animate-fade-in">
+              {errorMessage}
+            </div>
+          )}
+        </section>
+
+        {/* 5. Result & Action Section */}
+        <section className="flex flex-col items-center gap-4 mt-1">
+          {/* Card Mockup Graphic */}
+          <PlayingCardDisplay
+            ref={cardRef}
+            card={generatedCard}
+            userImage={activeUserImage}
+            aiGeneratedImage={aiGeneratedImage}
+            isGenerating={isGenerating}
+          />
+
+          {/* Action Toolbar */}
+          <ActionToolbar
+            onDownload={handleDownload}
+            onShare={handleShare}
+            onWhatsApp={handleWhatsApp}
+            onInstagram={handleInstagram}
+            onTelegram={handleTelegram}
+            onEmail={handleEmail}
+          />
+        </section>
+      </div>
+
+      {/* API Prompt Inspector Sheet */}
+      <PromptInspectorSheet
+        prompt={currentPrompt}
+        isOpen={isPromptModalOpen}
+        onClose={() => setIsPromptModalOpen(false)}
+      />
+    </main>
+  );
+}
