@@ -23,13 +23,16 @@ const openai = new OpenAI({
 // Model bisa diganti lewat env var tanpa edit kode
 const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-2";
 
-// Instruksi wajib supaya wajah mengikuti foto referensi
+// Ukuran gambar (potret)
+const CARD_SIZE = "1024x1536";
+
+// Foto = acuan IDENTITAS saja. Sudut kepala, tilt, dan ekspresi bebas mengikuti pose.
 const FACE_LOCK_PREFIX = `
 IDENTITY PRESERVATION (highest priority):
-The input image is a reference photo of a real person. The face of the person on the playing card MUST be the same person as in the reference photo.
-Keep exactly the same facial structure, face shape, eyes, eyebrows, nose, lips, skin tone, hairstyle/hairline, and any facial hair or glasses.
-Do NOT beautify, age, slim, or change the ethnicity of the face. The face must be clearly recognizable as this exact person.
-Only the costume, crown, background, ornaments, and card layout follow the design below.
+The input image is a reference photo of a real person, used ONLY to define WHO the person is.
+The face of the person on the playing card MUST be the same individual: keep the same facial structure, face shape, eyes, eyebrows, nose, lips, skin tone, hairstyle/hairline, and any facial hair or glasses. Do NOT beautify, age, slim, or change the ethnicity of the face.
+Do NOT copy the photo's head angle, head tilt, expression, framing, lighting, or clothing. Redraw the same person in the requested pose: head angle, tilt, gaze and expression may differ from the photo, while the identity stays exactly the same and clearly recognizable.
+Only the costume, pose, crown, background, ornaments, and card layout follow the design below.
 
 CARD DESIGN:
 `.trim();
@@ -73,11 +76,12 @@ app.post('/api/generate-card', async (req, res) => {
         image: imageFile,
         prompt: `${FACE_LOCK_PREFIX}\n${prompt}`,
         n: 1,
-        size: "1024x1024",
+        size: CARD_SIZE,
       };
 
-      // Opsional: aktifkan hanya jika model Anda mendukung parameter ini
-      // (mis. gpt-image-1). Set OPENAI_INPUT_FIDELITY=high di .env / Vercel.
+      // Opsional: hanya aktifkan jika model Anda mendukung parameter ini.
+      // Catatan: nilai "high" membuat hasil lebih menempel pada foto (termasuk sudutnya),
+      // jadi biarkan kosong jika ingin sudut kepala lebih bebas.
       if (process.env.OPENAI_INPUT_FIDELITY) {
         editParams.input_fidelity = process.env.OPENAI_INPUT_FIDELITY;
       }
@@ -90,7 +94,7 @@ app.post('/api/generate-card', async (req, res) => {
         model: IMAGE_MODEL,
         prompt,
         n: 1,
-        size: "1024x1024",
+        size: CARD_SIZE,
       } as any);
     }
 

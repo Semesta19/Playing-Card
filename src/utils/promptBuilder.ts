@@ -76,7 +76,7 @@ export const CARD_OPTIONS: CardOption[] = [
 
 /**
  * Kustomisasi opsional dari pengguna.
- * Jika kosong, prompt sama persis seperti default (tema kerajaan Ottoman).
+ * Jika kosong, prompt sama seperti default (tema kerajaan Ottoman).
  */
 export interface CardCustomization {
   pose?: string;
@@ -172,11 +172,13 @@ export function constructCardPrompt(card: CardOption, custom?: CardCustomization
   const costumeDetails = customOutfit ? customCostumeDetails : defaultCostumeDetails;
 
   // ===== POSE =====
-  const defaultPoseDetails = `Held centered in both hands at chest level, symmetrical composition`;
+  const defaultPoseDetails = `Held centered in both hands at chest level, symmetrical composition
+- The head may be posed naturally (a slight tilt or gentle turn is welcome); it does NOT have to copy the head angle of the reference photo`;
 
   const customPoseDetails = `CUSTOM POSE requested by the user: "${customPose}"
 - The pose applies to the upper figure; the lower figure is its exact 180-degree rotated mirror copy
-- Keep the face clearly visible and recognizable, turned toward the viewer as much as the pose allows
+- The head angle, head tilt, gaze direction and facial expression must follow this pose naturally and do NOT need to face the camera or match the reference photo
+- The face must remain visible enough to be recognized as the same person (avoid hiding the face or turning it fully away)
 - The symbolic object stays present and clearly visible, held or placed in a way that fits the pose`;
 
   const poseDetails = customPose ? customPoseDetails : defaultPoseDetails;
@@ -192,16 +194,17 @@ export function constructCardPrompt(card: CardOption, custom?: CardCustomization
 LOCKED ELEMENTS (must remain exactly as specified, do NOT change):
 - The card theme, cream/ivory background, ornate gold scrollwork, maroon/burgundy border panels, arched gold frame, rounded card corners, corner rank/suit markings, and overall color palette stay identical to the design described here
 - Only the ${customPose && customOutfit ? 'pose and outfit' : customPose ? 'pose' : 'outfit'} of the character may differ from the default description
-- The mirrored double-headed playing card composition and the exact face identity of the person in the reference image stay unchanged`
+- The mirrored double-headed playing card composition and the facial identity of the person in the reference image stay unchanged (identity is locked; head angle and expression are free)`
     : '';
 
-  const fullPrompt = `CRITICAL DIRECTIVE: PRESERVE EXACT FACE AND PERSON IDENTITY.
-Strictly retain the exact facial identity, face shape, eyes, eyebrows, nose, mouth, skin tone, facial hair (if present), and gender of the real person in the attached reference image. DO NOT replace the face with a generic fantasy character or swap the person's biological gender. The individual in the reference image MUST be recognizably depicted wearing royal playing card attire as ${cardRole}.
+  const fullPrompt = `CRITICAL DIRECTIVE: PRESERVE EXACT FACE IDENTITY, NOT THE PHOTO'S ANGLE.
+The attached reference image is used ONLY to define WHO the person is. Strictly retain the person's facial identity: bone structure, face shape, eyes, eyebrows, nose, mouth, skin tone, facial hair (if present), hairline/hairstyle, and gender. DO NOT replace the face with a generic fantasy character or swap the person's biological gender. The individual in the reference image MUST be recognizably depicted wearing royal playing card attire as ${cardRole}.
+Do NOT copy the head angle, head tilt, facial expression, camera framing, lighting, clothing, or background from the reference photo. Re-draw the same person naturally in the requested pose: head orientation, tilt, gaze and expression are free to differ from the photo (three-quarter view, a turned or tilted head, looking up or sideways, a different expression are all allowed) while the person remains unmistakably the same individual.
 
 CHARACTER & COSTUME:
 ${costumeDetails}
 
-SYMBOLIC OBJECT:
+SYMBOLIC OBJECT & POSE:
 - ${symbolicObjectDesc}
 ${poseDetails}
 
@@ -225,7 +228,7 @@ COLOR PALETTE:
 STYLE & EXECUTION:
 - Digital illustration, painterly semi-realistic royal playing card portrait
 - Fine linework on ornamental gold details and embroidered textures
-- Maintain the facial likeness of the person in the photo accurately, smoothly integrated into the illustrated card style without changing their recognizable facial structure.${lockedElements}`;
+- Maintain the facial likeness (identity) of the person in the photo accurately, smoothly integrated into the illustrated card style, even when the head is turned or tilted.${lockedElements}`;
 
   return {
     fullPrompt,
