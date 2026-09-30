@@ -12,7 +12,12 @@ import { PromptInspectorSheet } from './components/PromptInspectorSheet';
 import {
   CARD_OPTIONS,
   constructCardPrompt,
+  applyCardNameOverride,
+  sanitizeRankLetter,
   CUSTOM_TEXT_MAX_LENGTH,
+  RANK_LETTER_MAX_LENGTH,
+  RANK_NAME_MAX_LENGTH,
+  RANK_NAME_PRESETS,
 } from './utils/promptBuilder';
 import { CardOption } from './types';
 import { Loader2, Code2, ChevronDown, RotateCcw } from 'lucide-react';
@@ -202,6 +207,9 @@ export default function App() {
   // Kustomisasi opsional: pose & pakaian (kosong = tampilan default)
   const [customPose, setCustomPose] = useState<string>('');
   const [customOutfit, setCustomOutfit] = useState<string>('');
+  // Nama kartu kustom: huruf di sudut (mis. "V") & nama karakter (mis. "Valet")
+  const [customRankLetter, setCustomRankLetter] = useState<string>('');
+  const [customRankName, setCustomRankName] = useState<string>('');
   const [isCustomOpen, setIsCustomOpen] = useState<boolean>(false);
 
   // State for currently displayed/generated card
@@ -244,11 +252,26 @@ export default function App() {
   // Ref to the rendered playing card for downloading and sharing
   const cardRef = useRef<PlayingCardDisplayRef | null>(null);
 
-  const hasCustom = customPose.trim().length > 0 || customOutfit.trim().length > 0;
+  const isJokerSelected = selectedCard.rank === 'Joker';
+
+  const hasCustom =
+    customPose.trim().length > 0 ||
+    customOutfit.trim().length > 0 ||
+    (!isJokerSelected &&
+      (customRankLetter.trim().length > 0 || customRankName.trim().length > 0));
+
+  // Kartu dengan nama kustom (dipakai untuk tampilan, label, & nama file)
+  const withCustomName = (card: CardOption): CardOption =>
+    applyCardNameOverride(card, { rankLetter: customRankLetter, rankName: customRankName });
 
   // Susun prompt dengan kartu terpilih + kustomisasi saat ini
   const buildPrompt = (card: CardOption) =>
-    constructCardPrompt(card, { pose: customPose, outfit: customOutfit }).fullPrompt;
+    constructCardPrompt(card, {
+      pose: customPose,
+      outfit: customOutfit,
+      rankLetter: customRankLetter,
+      rankName: customRankName,
+    }).fullPrompt;
 
   /**
    * Main Generate Handler
@@ -267,7 +290,7 @@ export default function App() {
       return;
     }
 
-    // Construct dynamic prompt string (termasuk pose & pakaian kustom)
+    // Construct dynamic prompt string (termasuk nama, pose & pakaian kustom)
     const fullPrompt = buildPrompt(selectedCard);
     setCurrentPrompt(fullPrompt);
 
@@ -319,7 +342,7 @@ export default function App() {
         // Crop otomatis: buang margin putih di sekeliling kartu
         const croppedImage = await cropToCard(data.imageUrl);
         setAiGeneratedImage(croppedImage);
-        setGeneratedCard(selectedCard);
+        setGeneratedCard(withCustomName(selectedCard));
         setActiveUserImage(userImage);
       }
     } catch (error: any) {
@@ -345,8 +368,9 @@ export default function App() {
   // Action Toolbar Handlers
   const handleDownload = async () => {
     if (cardRef.current) {
+      const safeRank = String(generatedCard.rank).replace(/[^A-Za-z0-9_-]+/g, '_');
       await cardRef.current.downloadCard(
-        `PlayingCard-${generatedCard.rank}-${generatedCard.suit}.png`
+        `PlayingCard-${safeRank}-${generatedCard.suit}.png`
       );
     }
   };
@@ -403,6 +427,8 @@ export default function App() {
   const resetCustom = () => {
     setCustomPose('');
     setCustomOutfit('');
+    setCustomRankLetter('');
+    setCustomRankName('');
   };
 
   return (
@@ -455,7 +481,7 @@ export default function App() {
           />
         </section>
 
-        {/* 3b. Kustomisasi Pose & Pakaian (opsional) */}
+        {/* 3b. Kustomisasi Nama, Pose & Pakaian (opsional) */}
         <section aria-labelledby="custom-section">
           <div className="bg-white rounded-2xl border border-[#E5E5EA] overflow-hidden">
             <button
@@ -466,7 +492,7 @@ export default function App() {
             >
               <div className="flex flex-col">
                 <span className="text-[15px] font-semibold text-[#1C1C1E]">
-                  Kustomisasi Pose &amp; Pakaian
+                  Kustomisasi Nama, Pose &amp; Pakaian
                 </span>
                 <span className="text-[12px] text-[#8E8E93]">
                   {hasCustom
@@ -488,6 +514,99 @@ export default function App() {
 
             {isCustomOpen && (
               <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[#E5E5EA] pt-3">
+                {/* Nama Kartu (huruf sudut & nama karakter) */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-[13px] font-medium text-[#3A3A3C]">
+                    Nama Kartu
+                  </span>
+
+                  {isJokerSelected ? (
+                    <p className="text-[12px] text-[#8E8E93]">
+                      Nama kartu tidak berlaku untuk Joker.
+                    </p>
+                  ) : (
+                    <>
+                      {/* Tombol cepat */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {RANK_NAME_PRESETS.map((preset) => {
+                          const active =
+                            sanitizeRankLetter(customRankLetter) === preset.letter &&
+                            customRankName.trim().toLowerCase() === preset.name.toLowerCase();
+                          return (
+                            <button
+                              key={preset.letter + preset.name}
+                              type="button"
+                              onClick={() => {
+                                setCustomRankLetter(preset.letter);
+                                setCustomRankName(preset.name);
+                              }}
+                              className={`px-3 py-1.5 rounded-full text-[13px] font-medium border transition-colors cursor-pointer ${
+                                active
+                                  ? 'bg-[#007AFF] border-[#007AFF] text-white'
+                                  : 'bg-[#F2F2F7] border-[#D1D1D6] text-[#1C1C1E] hover:bg-[#E5E5EA]'
+                              }`}
+                            >
+                              {preset.letter} · {preset.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex gap-2">
+                        {/* Huruf di sudut kartu */}
+                        <div className="flex flex-col gap-1.5 w-[104px] shrink-0">
+                          <label
+                            htmlFor="custom-rank-letter"
+                            className="text-[12px] text-[#8E8E93]"
+                          >
+                            Huruf sudut
+                          </label>
+                          <input
+                            id="custom-rank-letter"
+                            type="text"
+                            value={customRankLetter}
+                            onChange={(e) =>
+                              setCustomRankLetter(sanitizeRankLetter(e.target.value))
+                            }
+                            maxLength={RANK_LETTER_MAX_LENGTH}
+                            placeholder={selectedCard.rankLetter}
+                            autoCapitalize="characters"
+                            autoComplete="off"
+                            className="select-text w-full rounded-xl border border-[#D1D1D6] bg-[#F2F2F7] px-3 py-2.5 text-[16px] font-semibold text-center text-[#1C1C1E] placeholder:text-[#AEAEB2] placeholder:font-normal focus:outline-none focus:border-[#007AFF] focus:bg-white"
+                          />
+                        </div>
+
+                        {/* Nama karakter */}
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                          <label
+                            htmlFor="custom-rank-name"
+                            className="text-[12px] text-[#8E8E93]"
+                          >
+                            Nama karakter
+                          </label>
+                          <input
+                            id="custom-rank-name"
+                            type="text"
+                            value={customRankName}
+                            onChange={(e) =>
+                              setCustomRankName(e.target.value.slice(0, RANK_NAME_MAX_LENGTH))
+                            }
+                            maxLength={RANK_NAME_MAX_LENGTH}
+                            placeholder={String(selectedCard.rank)}
+                            autoComplete="off"
+                            className="select-text w-full rounded-xl border border-[#D1D1D6] bg-[#F2F2F7] px-3 py-2.5 text-[16px] text-[#1C1C1E] placeholder:text-[#AEAEB2] focus:outline-none focus:border-[#007AFF] focus:bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      <span className="text-[11px] text-[#8E8E93]">
+                        Kosongkan untuk memakai nama bawaan ({selectedCard.rankLetter} ·{' '}
+                        {selectedCard.rank}). Huruf sudut maks. {RANK_LETTER_MAX_LENGTH} karakter.
+                      </span>
+                    </>
+                  )}
+                </div>
+
                 {/* Pose */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="custom-pose" className="text-[13px] font-medium text-[#3A3A3C]">

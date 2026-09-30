@@ -32,6 +32,19 @@ const dataUrlToBlob = (dataUrl: string): Blob => {
   return new Blob([bytes], { type: mime });
 };
 
+// Ukuran huruf sudut kartu menyesuaikan panjang teks (mis. "V", "10", "Kn")
+const rankLength = (letter: string): number => Array.from(letter).length;
+
+const getRankFontPx = (letter: string): number => {
+  const len = rankLength(letter);
+  return len <= 1 ? 74 : len === 2 ? 58 : 44;
+};
+
+const getRankTextClass = (letter: string): string => {
+  const len = rankLength(letter);
+  return len <= 1 ? 'text-3xl' : len === 2 ? 'text-2xl' : 'text-lg';
+};
+
 export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardDisplayProps>(
   ({ card, userImage, aiGeneratedImage, isGenerating = false }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -92,7 +105,7 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
       ctx.textBaseline = 'middle';
 
       // Top-Left Rank
-      ctx.font = `bold ${card.rankLetter === '10' ? '58px' : '74px'} "Playfair Display", serif`;
+      ctx.font = `bold ${getRankFontPx(card.rankLetter)}px "Playfair Display", serif`;
       ctx.fillText(card.rankLetter, 92, 100);
       ctx.font = '54px "Cinzel", serif';
       ctx.fillText(card.suitSymbol, 92, 160);
@@ -101,7 +114,7 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
       ctx.save();
       ctx.translate(W - 92, H - 100);
       ctx.rotate(Math.PI);
-      ctx.font = `bold ${card.rankLetter === '10' ? '58px' : '74px'} "Playfair Display", serif`;
+      ctx.font = `bold ${getRankFontPx(card.rankLetter)}px "Playfair Display", serif`;
       ctx.fillText(card.rankLetter, 0, 0);
       ctx.font = '54px "Cinzel", serif';
       ctx.fillText(card.suitSymbol, 0, -60);
@@ -446,7 +459,7 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
     };
 
     useImperativeHandle(ref, () => ({
-      downloadCard: async (fileName = `PlayingCard-${card.rank}-${card.suit}.png`) => {
+      downloadCard: async (fileName = `PlayingCard-${String(card.rank).replace(/[^A-Za-z0-9_-]+/g, '_')}-${card.suit}.png`) => {
         if (aiGeneratedImage) {
           await saveImage(aiGeneratedImage, fileName);
           return;
@@ -501,9 +514,9 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
               <div className="absolute right-[8px] top-[25px] bottom-[25px] w-[5px] bg-[#671424] opacity-90 rounded-full" />
 
               {/* Top Left Rank & Suit */}
-              <div className="absolute top-4 left-5 flex flex-col items-center select-none z-10 w-7">
+              <div className="absolute top-4 left-5 flex flex-col items-center select-none z-10 min-w-[1.75rem]">
                 <span
-                  className={`font-serif ${card.rankLetter === '10' ? 'text-2xl' : 'text-3xl'} font-bold leading-none ${
+                  className={`font-serif ${getRankTextClass(card.rankLetter)} font-bold leading-none ${
                     isRed ? 'text-[#C9182B]' : 'text-[#1C1C1E]'
                   }`}
                 >
@@ -519,9 +532,9 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
               </div>
 
               {/* Bottom Right Rank & Suit (Mirrored) */}
-              <div className="absolute bottom-4 right-5 flex flex-col items-center select-none rotate-180 z-10 w-7">
+              <div className="absolute bottom-4 right-5 flex flex-col items-center select-none rotate-180 z-10 min-w-[1.75rem]">
                 <span
-                  className={`font-serif ${card.rankLetter === '10' ? 'text-2xl' : 'text-3xl'} font-bold leading-none ${
+                  className={`font-serif ${getRankTextClass(card.rankLetter)} font-bold leading-none ${
                     isRed ? 'text-[#C9182B]' : 'text-[#1C1C1E]'
                   }`}
                 >

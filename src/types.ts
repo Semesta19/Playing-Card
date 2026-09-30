@@ -34,10 +34,14 @@ export type Suit = 'Diamond' | 'Heart' | 'Club' | 'Spade' | 'None';
 export type SuitSymbol = '♢' | '♡' | '♧' | '♤' | '★';
 export type SuitColor = 'red' | 'black';
 
+/**
+ * rank & rankLetter bertipe string (bukan union ketat) supaya nama kartu
+ * bisa dikustomisasi pengguna, mis. "V" untuk Valet atau "D" untuk Dame.
+ */
 export interface CardOption {
   id: string;
-  rank: Rank;
-  rankLetter: RankLetter;
+  rank: Rank | string;
+  rankLetter: RankLetter | string;
   suit: Suit;
   suitSymbol: SuitSymbol;
   suitColor: SuitColor;
@@ -46,8 +50,8 @@ export interface CardOption {
 
 export interface PromptResult {
   fullPrompt: string;
-  rank: Rank;
-  rankLetter: RankLetter;
+  rank: Rank | string;
+  rankLetter: RankLetter | string;
   suit: Suit;
   suitColor: SuitColor;
   symbolicObjectDesc: string;

@@ -1,73 +1,41 @@
-import { CardOption, PromptResult, Suit } from '../types';
+import { CardOption, PromptResult, Rank, RankLetter, Suit, SuitSymbol, SuitColor } from '../types';
+
+const SUITS: Array<{ suit: Suit; symbol: SuitSymbol; color: SuitColor }> = [
+  { suit: 'Diamond', symbol: '♢', color: 'red' },
+  { suit: 'Heart', symbol: '♡', color: 'red' },
+  { suit: 'Club', symbol: '♧', color: 'black' },
+  { suit: 'Spade', symbol: '♤', color: 'black' },
+];
+
+const RANKS: Array<{ rank: Rank; letter: RankLetter }> = [
+  { rank: 'Ace', letter: 'A' },
+  { rank: '2', letter: '2' },
+  { rank: '3', letter: '3' },
+  { rank: '4', letter: '4' },
+  { rank: '5', letter: '5' },
+  { rank: '6', letter: '6' },
+  { rank: '7', letter: '7' },
+  { rank: '8', letter: '8' },
+  { rank: '9', letter: '9' },
+  { rank: '10', letter: '10' },
+  { rank: 'Jack', letter: 'J' },
+  { rank: 'Queen', letter: 'Q' },
+  { rank: 'King', letter: 'K' },
+];
 
 export const CARD_OPTIONS: CardOption[] = [
-  // Ace
-  { id: 'A_Diamond', rank: 'Ace', rankLetter: 'A', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[A] Ace of Diamond ♢' },
-  { id: 'A_Heart', rank: 'Ace', rankLetter: 'A', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[A] Ace of Heart ♡' },
-  { id: 'A_Club', rank: 'Ace', rankLetter: 'A', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[A] Ace of Club ♧' },
-  { id: 'A_Spade', rank: 'Ace', rankLetter: 'A', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[A] Ace of Spade ♤' },
-
-  // Numbers 2 to 10
-  { id: '2_Diamond', rank: '2', rankLetter: '2', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[2] 2 of Diamond ♢' },
-  { id: '2_Heart', rank: '2', rankLetter: '2', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[2] 2 of Heart ♡' },
-  { id: '2_Club', rank: '2', rankLetter: '2', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[2] 2 of Club ♧' },
-  { id: '2_Spade', rank: '2', rankLetter: '2', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[2] 2 of Spade ♤' },
-
-  { id: '3_Diamond', rank: '3', rankLetter: '3', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[3] 3 of Diamond ♢' },
-  { id: '3_Heart', rank: '3', rankLetter: '3', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[3] 3 of Heart ♡' },
-  { id: '3_Club', rank: '3', rankLetter: '3', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[3] 3 of Club ♧' },
-  { id: '3_Spade', rank: '3', rankLetter: '3', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[3] 3 of Spade ♤' },
-
-  { id: '4_Diamond', rank: '4', rankLetter: '4', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[4] 4 of Diamond ♢' },
-  { id: '4_Heart', rank: '4', rankLetter: '4', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[4] 4 of Heart ♡' },
-  { id: '4_Club', rank: '4', rankLetter: '4', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[4] 4 of Club ♧' },
-  { id: '4_Spade', rank: '4', rankLetter: '4', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[4] 4 of Spade ♤' },
-
-  { id: '5_Diamond', rank: '5', rankLetter: '5', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[5] 5 of Diamond ♢' },
-  { id: '5_Heart', rank: '5', rankLetter: '5', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[5] 5 of Heart ♡' },
-  { id: '5_Club', rank: '5', rankLetter: '5', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[5] 5 of Club ♧' },
-  { id: '5_Spade', rank: '5', rankLetter: '5', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[5] 5 of Spade ♤' },
-
-  { id: '6_Diamond', rank: '6', rankLetter: '6', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[6] 6 of Diamond ♢' },
-  { id: '6_Heart', rank: '6', rankLetter: '6', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[6] 6 of Heart ♡' },
-  { id: '6_Club', rank: '6', rankLetter: '6', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[6] 6 of Club ♧' },
-  { id: '6_Spade', rank: '6', rankLetter: '6', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[6] 6 of Spade ♤' },
-
-  { id: '7_Diamond', rank: '7', rankLetter: '7', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[7] 7 of Diamond ♢' },
-  { id: '7_Heart', rank: '7', rankLetter: '7', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[7] 7 of Heart ♡' },
-  { id: '7_Club', rank: '7', rankLetter: '7', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[7] 7 of Club ♧' },
-  { id: '7_Spade', rank: '7', rankLetter: '7', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[7] 7 of Spade ♤' },
-
-  { id: '8_Diamond', rank: '8', rankLetter: '8', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[8] 8 of Diamond ♢' },
-  { id: '8_Heart', rank: '8', rankLetter: '8', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[8] 8 of Heart ♡' },
-  { id: '8_Club', rank: '8', rankLetter: '8', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[8] 8 of Club ♧' },
-  { id: '8_Spade', rank: '8', rankLetter: '8', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[8] 8 of Spade ♤' },
-
-  { id: '9_Diamond', rank: '9', rankLetter: '9', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[9] 9 of Diamond ♢' },
-  { id: '9_Heart', rank: '9', rankLetter: '9', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[9] 9 of Heart ♡' },
-  { id: '9_Club', rank: '9', rankLetter: '9', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[9] 9 of Club ♧' },
-  { id: '9_Spade', rank: '9', rankLetter: '9', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[9] 9 of Spade ♤' },
-
-  { id: '10_Diamond', rank: '10', rankLetter: '10', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[10] 10 of Diamond ♢' },
-  { id: '10_Heart', rank: '10', rankLetter: '10', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[10] 10 of Heart ♡' },
-  { id: '10_Club', rank: '10', rankLetter: '10', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[10] 10 of Club ♧' },
-  { id: '10_Spade', rank: '10', rankLetter: '10', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[10] 10 of Spade ♤' },
-
-  // Court Cards: Jack, Queen, King
-  { id: 'J_Diamond', rank: 'Jack', rankLetter: 'J', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[J] Jack of Diamond ♢' },
-  { id: 'J_Heart', rank: 'Jack', rankLetter: 'J', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[J] Jack of Heart ♡' },
-  { id: 'J_Club', rank: 'Jack', rankLetter: 'J', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[J] Jack of Club ♧' },
-  { id: 'J_Spade', rank: 'Jack', rankLetter: 'J', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[J] Jack of Spade ♤' },
-
-  { id: 'Q_Diamond', rank: 'Queen', rankLetter: 'Q', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[Q] Queen of Diamond ♢' },
-  { id: 'Q_Heart', rank: 'Queen', rankLetter: 'Q', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[Q] Queen of Heart ♡' },
-  { id: 'Q_Club', rank: 'Queen', rankLetter: 'Q', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[Q] Queen of Club ♧' },
-  { id: 'Q_Spade', rank: 'Queen', rankLetter: 'Q', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[Q] Queen of Spade ♤' },
-
-  { id: 'K_Diamond', rank: 'King', rankLetter: 'K', suit: 'Diamond', suitSymbol: '♢', suitColor: 'red', label: '[K] King of Diamond ♢' },
-  { id: 'K_Heart', rank: 'King', rankLetter: 'K', suit: 'Heart', suitSymbol: '♡', suitColor: 'red', label: '[K] King of Heart ♡' },
-  { id: 'K_Club', rank: 'King', rankLetter: 'K', suit: 'Club', suitSymbol: '♧', suitColor: 'black', label: '[K] King of Club ♧' },
-  { id: 'K_Spade', rank: 'King', rankLetter: 'K', suit: 'Spade', suitSymbol: '♤', suitColor: 'black', label: '[K] King of Spade ♤' },
+  // Ace, 2-10, Jack, Queen, King x 4 suit
+  ...RANKS.flatMap(({ rank, letter }) =>
+    SUITS.map(({ suit, symbol, color }) => ({
+      id: `${letter}_${suit}`,
+      rank,
+      rankLetter: letter,
+      suit,
+      suitSymbol: symbol,
+      suitColor: color,
+      label: `[${letter}] ${rank} of ${suit} ${symbol}`,
+    }))
+  ),
 
   // Jokers
   { id: 'Joker_Red', rank: 'Joker', rankLetter: '★', suit: 'None', suitSymbol: '★', suitColor: 'red', label: '[★] Red Joker 🃏' },
@@ -81,10 +49,81 @@ export const CARD_OPTIONS: CardOption[] = [
 export interface CardCustomization {
   pose?: string;
   outfit?: string;
+  /** Huruf/tulisan di sudut kartu, mis. "V" (menggantikan J/Q/K/A/angka) */
+  rankLetter?: string;
+  /** Nama karakter kartu, mis. "Valet" (menggantikan Jack/Queen/King/Ace) */
+  rankName?: string;
 }
 
 /** Batas panjang input kustomisasi (dipakai juga oleh UI) */
 export const CUSTOM_TEXT_MAX_LENGTH = 200;
+/** Batas panjang huruf di sudut kartu (mis. "V", "Kn", "10") */
+export const RANK_LETTER_MAX_LENGTH = 3;
+/** Batas panjang nama karakter kartu (mis. "Valet") */
+export const RANK_NAME_MAX_LENGTH = 20;
+
+/**
+ * Preset nama kartu (opsional, dipakai UI sebagai tombol cepat).
+ * Silakan tambah/ubah sesuai kebutuhan.
+ */
+export const RANK_NAME_PRESETS: Array<{ letter: string; name: string }> = [
+  { letter: 'V', name: 'Valet' },
+  { letter: 'D', name: 'Dame' },
+  { letter: 'R', name: 'Roi' },
+  { letter: 'B', name: 'Bube' },
+  { letter: 'P', name: 'Prince' },
+];
+
+/** Bersihkan huruf sudut kartu: tanpa spasi/kutip, huruf besar, maks. 3 karakter */
+export function sanitizeRankLetter(value?: string): string {
+  if (!value) return '';
+  return Array.from(value.replace(/[\s"'`\\]/g, ''))
+    .slice(0, RANK_LETTER_MAX_LENGTH)
+    .join('')
+    .toUpperCase();
+}
+
+/** Bersihkan nama karakter kartu: rapikan spasi, buang kutip, batasi panjang */
+export function sanitizeRankName(value?: string): string {
+  if (!value) return '';
+  return Array.from(
+    value
+      .replace(/[\r\n\t]+/g, ' ')
+      .replace(/["`\\]/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+  )
+    .slice(0, RANK_NAME_MAX_LENGTH)
+    .join('')
+    .trim();
+}
+
+/**
+ * Terapkan nama kustom ke kartu terpilih.
+ * - Kosong  -> kartu asli dikembalikan apa adanya.
+ * - Joker   -> tidak berubah (Joker tidak punya huruf J/Q/K).
+ * Hasilnya dipakai untuk tampilan kartu, label, nama file, dan prompt.
+ */
+export function applyCardNameOverride(
+  card: CardOption,
+  custom?: Pick<CardCustomization, 'rankLetter' | 'rankName'>
+): CardOption {
+  if (card.rank === 'Joker') return card;
+
+  const letter = sanitizeRankLetter(custom?.rankLetter);
+  const name = sanitizeRankName(custom?.rankName);
+  if (!letter && !name) return card;
+
+  const rankLetter = letter || card.rankLetter;
+  const rank = name || card.rank;
+
+  return {
+    ...card,
+    rank,
+    rankLetter,
+    label: `[${rankLetter}] ${rank} of ${card.suit} ${card.suitSymbol}`,
+  };
+}
 
 /** Bersihkan input: rapikan spasi/baris baru, buang tanda kutip ganda, batasi panjang */
 function sanitizeCustomText(value?: string): string {
@@ -134,14 +173,19 @@ export function getSymbolicObjectDesc(suit: Suit, rank: CardOption['rank']): { s
   }
 }
 
-export function constructCardPrompt(card: CardOption, custom?: CardCustomization): PromptResult {
+export function constructCardPrompt(baseCard: CardOption, custom?: CardCustomization): PromptResult {
+  // Terapkan nama/huruf kustom (jika ada) sebelum menyusun prompt
+  const card = applyCardNameOverride(baseCard, custom);
   const isJoker = card.rank === 'Joker';
   const { symbolicObjectDesc, suitColor: derivedSuitColor } = getSymbolicObjectDesc(card.suit, card.rank);
   const suitColor = card.suitColor || derivedSuitColor;
 
   const customPose = sanitizeCustomText(custom?.pose);
   const customOutfit = sanitizeCustomText(custom?.outfit);
-  const hasCustom = Boolean(customPose || customOutfit);
+  const customRankLetter = isJoker ? '' : sanitizeRankLetter(custom?.rankLetter);
+  const customRankName = isJoker ? '' : sanitizeRankName(custom?.rankName);
+  const hasCustomName = Boolean(customRankLetter || customRankName);
+  const hasCustom = Boolean(customPose || customOutfit || hasCustomName);
 
   const cardRole = isJoker
     ? `the Royal ${card.suitColor === 'red' ? 'Red' : 'Black'} Joker card character`
@@ -185,15 +229,24 @@ export function constructCardPrompt(card: CardOption, custom?: CardCustomization
 
   const cornerDetails = isJoker
     ? `Card corners show "JOKER" or star symbol ★ in ${suitColor}, top-left and bottom-right`
-    : `Card corners show rank letter ${card.rankLetter} and suit symbol in ${suitColor}, top-left and bottom-right`;
+    : customRankLetter
+      ? `Card corners show the rank marking exactly "${card.rankLetter}" and the suit symbol in ${suitColor}, top-left and bottom-right. The marking "${card.rankLetter}" is a custom name for this card: render it exactly as written, clearly legible, and do NOT replace it with J, Q, K or A`
+      : `Card corners show rank letter ${card.rankLetter} and suit symbol in ${suitColor}, top-left and bottom-right`;
+
+  // Bagian yang boleh berbeda dari default
+  const changedParts = [
+    customPose && 'pose',
+    customOutfit && 'outfit',
+    hasCustomName && 'card name / corner marking text',
+  ].filter(Boolean) as string[];
 
   // Penegasan elemen yang tidak boleh berubah (hanya jika ada kustomisasi)
   const lockedElements = hasCustom
     ? `
 
 LOCKED ELEMENTS (must remain exactly as specified, do NOT change):
-- The card theme, cream/ivory background, ornate gold scrollwork, maroon/burgundy border panels, arched gold frame, rounded card corners, corner rank/suit markings, and overall color palette stay identical to the design described here
-- Only the ${customPose && customOutfit ? 'pose and outfit' : customPose ? 'pose' : 'outfit'} of the character may differ from the default description
+- The card theme, cream/ivory background, ornate gold scrollwork, maroon/burgundy border panels, arched gold frame, rounded card corners, ${hasCustomName ? 'corner marking placement and style' : 'corner rank/suit markings'}, and overall color palette stay identical to the design described here
+- Only the ${changedParts.join(' and ')}${hasCustomName ? '' : ' of the character'} may differ from the default description
 - The mirrored double-headed playing card composition and the facial identity of the person in the reference image stay unchanged (identity is locked; head angle and expression are free)`
     : '';
 
