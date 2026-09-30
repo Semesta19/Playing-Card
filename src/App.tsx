@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { UploadBox } from './components/UploadBox';
 import { CardSelect } from './components/CardSelect';
 import { PlayingCardDisplay, PlayingCardDisplayRef } from './components/PlayingCardDisplay';
@@ -172,6 +172,24 @@ const cropToCard = (dataUrl: string): Promise<string> => {
   });
 };
 
+interface QuotaInfo {
+  limit: number;
+  used: number;
+  remaining: number;
+  resetAt: string; // ISO
+  resetLabel: string; // mis. "00.01 WIB"
+}
+
+/** Sisa waktu menuju reset kuota, mis. "5 jam 12 menit" */
+const formatTimeLeft = (resetAtIso: string): string => {
+  const ms = new Date(resetAtIso).getTime() - Date.now();
+  if (Number.isNaN(ms) || ms <= 0) return 'sebentar lagi';
+  const totalMin = Math.ceil(ms / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return h > 0 ? `${h} jam ${m} menit` : `${m} menit`;
+};
+
 export default function App() {
   // State for user uploaded reference photo (base64 or object URL)
   const [userImage, setUserImage] = useState<string | null>(null);
@@ -194,6 +212,26 @@ export default function App() {
 
   // Loading state
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+
+  // Kuota harian (null = belum diketahui / gagal dimuat)
+  const [quota, setQuota] = useState<QuotaInfo | null>(null);
+
+  const refreshQuota = async () => {
+    try {
+      const res = await fetch('/api/quota', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (typeof data?.remaining === 'number') setQuota(data as QuotaInfo);
+    } catch {
+      // Abaikan: kuota hanya informasi tambahan
+    }
+  };
+
+  useEffect(() => {
+    refreshQuota();
+  }, []);
+
+  const isQuotaExhausted = quota !== null && quota.remaining <= 0;
 
   // Constructed prompt tracking
   const [currentPrompt, setCurrentPrompt] = useState<string>(() => {
@@ -219,6 +257,10 @@ export default function App() {
    */
   const handleGenerate = async () => {
     if (isGenerating) return;
+
+    if (isQuotaExhausted) {
+      return; // peringatan kuota sudah tampil di layar
+    }
 
     if (!userImage) {
       setErrorMessage('Upload foto wajah terlebih dahulu agar hasil mengikuti wajah Anda.');
@@ -259,6 +301,17 @@ export default function App() {
       }
 
       if (!response.ok) {
+        // Kuota harian per pengguna habis: tampilkan peringatan kuota (bukan error biasa)
+        if (response.status === 429 && data?.code === 'QUOTA_EXCEEDED') {
+          setQuota({
+            limit: data.limit,
+            used: data.limit,
+            remaining: 0,
+            resetAt: data.resetAt,
+            resetLabel: data.resetLabel,
+          });
+          return;
+        }
         throw new Error(data.error || 'Gagal memproses gambar');
       }
 
@@ -274,6 +327,7 @@ export default function App() {
       setErrorMessage(error.message || 'Terjadi kesalahan saat memproses gambar.');
     } finally {
       setIsGenerating(false);
+      refreshQuota();
     }
   };
 
@@ -479,68 +533,4 @@ export default function App() {
                     className="self-start flex items-center gap-1.5 text-[13px] font-medium text-[#007AFF] cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    Kembalikan ke default
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* 4. Generate Button */}
-        <section className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="w-full py-4 px-6 rounded-full bg-[#007AFF] hover:bg-[#0066D6] active:bg-[#0051A8] active:scale-[0.985] text-white font-semibold text-[17px] tracking-tight shadow-[0_4px_14px_rgba(0,122,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Memproses Kartu...</span>
-              </>
-            ) : (
-              <span>Generate Gambar</span>
-            )}
-          </button>
-
-          {errorMessage && (
-            <div className="p-3 bg-[#FF3B30]/10 border border-[#FF3B30]/20 rounded-xl text-center text-[13px] font-medium text-[#FF3B30] animate-fade-in">
-              {errorMessage}
-            </div>
-          )}
-        </section>
-
-        {/* 5. Result & Action Section */}
-        <section className="flex flex-col items-center gap-4 mt-1">
-          {/* Card Mockup Graphic */}
-          <PlayingCardDisplay
-            ref={cardRef}
-            card={generatedCard}
-            userImage={activeUserImage}
-            aiGeneratedImage={aiGeneratedImage}
-            isGenerating={isGenerating}
-          />
-
-          {/* Action Toolbar */}
-          <ActionToolbar
-            onDownload={handleDownload}
-            onShare={handleShare}
-            onWhatsApp={handleWhatsApp}
-            onInstagram={handleInstagram}
-            onTelegram={handleTelegram}
-            onEmail={handleEmail}
-          />
-        </section>
-      </div>
-
-      {/* API Prompt Inspector Sheet */}
-      <PromptInspectorSheet
-        prompt={currentPrompt}
-        isOpen={isPromptModalOpen}
-        onClose={() => setIsPromptModalOpen(false)}
-      />
-    </main>
-  );
-}
+                    Kembalikan ke
