@@ -30,7 +30,7 @@ const CARD_SIZE = "1024x1536";
 
 // ===== PEMBATASAN PEMAKAIAN (atur lewat env var) =====
 // Maks. kartu per IP per hari
-const DAILY_LIMIT_PER_IP = Number(process.env.DAILY_LIMIT_PER_IP) || 3;
+const DAILY_LIMIT_PER_IP = Number(process.env.DAILY_LIMIT_PER_IP) || 10;
 // Batas total per hari untuk SEMUA pengguna (pengaman biaya)
 const DAILY_GLOBAL_LIMIT = Number(process.env.DAILY_GLOBAL_LIMIT) || 300;
 // Kuota reset setiap hari pukul 00.01 pada zona waktu ini.
