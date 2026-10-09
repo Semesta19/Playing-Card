@@ -24,14 +24,14 @@ export const CardSelect: React.FC<CardSelectProps> = ({
     <div className="bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)] border border-[#E5E5EA]">
       {/* iOS Group Label */}
       <div className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider mb-2.5 px-0.5">
-        Pilih Jenis Kartu
+        Choose Card Type
       </div>
 
       <div className="relative">
         <select
           value={selectedCard.id}
           onChange={handleChange}
-          aria-label="Pilih Jenis Kartu"
+          aria-label="Choose Card Type"
           className="w-full appearance-none bg-[#F9F9FB] hover:bg-[#F2F2F7] active:bg-[#E5E5EA] border border-[#D1D1D6] rounded-xl px-4 py-3.5 pr-10 text-[16px] font-medium text-[#1C1C1E] focus:outline-none focus:ring-2 focus:ring-[#007AFF] transition-all cursor-pointer font-sans"
         >
           {CARD_OPTIONS.map((card) => (

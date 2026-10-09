@@ -30,7 +30,7 @@ const CARD_SIZE = "1024x1536";
 
 // ===== PEMBATASAN PEMAKAIAN (atur lewat env var) =====
 // Maks. kartu per IP per hari
-const DAILY_LIMIT_PER_IP = Number(process.env.DAILY_LIMIT_PER_IP) || 10;
+const DAILY_LIMIT_PER_IP = Number(process.env.DAILY_LIMIT_PER_IP) || 3;
 // Batas total per hari untuk SEMUA pengguna (pengaman biaya)
 const DAILY_GLOBAL_LIMIT = Number(process.env.DAILY_GLOBAL_LIMIT) || 300;
 // Kuota reset setiap hari pukul 00.01 pada zona waktu ini.
@@ -39,7 +39,7 @@ const RESET_UTC_OFFSET_HOURS = (() => {
   const raw = process.env.RESET_UTC_OFFSET_HOURS;
   return raw !== undefined && raw !== '' && !Number.isNaN(Number(raw)) ? Number(raw) : 7;
 })();
-const RESET_LABEL = process.env.RESET_LABEL || '00.01 WIB';
+const RESET_LABEL = process.env.RESET_LABEL || '12:01 AM WIB';
 // Batas ukuran input
 const MAX_PROMPT_CHARS = 8000;
 const MAX_IMAGE_DATAURL_CHARS = 5_500_000;
@@ -94,7 +94,7 @@ function humanTimeLeft(seconds: number): string {
   const totalMin = Math.max(1, Math.ceil(seconds / 60));
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
-  return h > 0 ? `${h} jam ${m} menit` : `${m} menit`;
+  return h > 0 ? `${h} hr ${m} min` : `${m} min`;
 }
 
 // ---------- Penghitung (Redis bila tersedia, kalau tidak memori) ----------
@@ -220,7 +220,7 @@ function originGuard(req: Request, res: Response, next: NextFunction) {
   } catch {
     // origin tidak valid -> jatuh ke penolakan
   }
-  return res.status(403).json({ error: 'Permintaan dari sumber ini tidak diizinkan.' });
+  return res.status(403).json({ error: 'Requests from this origin are not allowed.' });
 }
 
 // Validasi input SEBELUM dihitung ke kuota
@@ -234,14 +234,14 @@ function validateBody(req: Request, res: Response, next: NextFunction) {
     return res.status(400).json({ error: 'Prompt is required' });
   }
   if (prompt.length > MAX_PROMPT_CHARS) {
-    return res.status(400).json({ error: 'Prompt terlalu panjang.' });
+    return res.status(400).json({ error: 'Prompt is too long.' });
   }
   if (referenceImage != null) {
     if (typeof referenceImage !== 'string') {
-      return res.status(400).json({ error: 'Format foto tidak valid.' });
+      return res.status(400).json({ error: 'Invalid photo format.' });
     }
     if (referenceImage.length > MAX_IMAGE_DATAURL_CHARS) {
-      return res.status(413).json({ error: 'Ukuran foto terlalu besar. Coba foto lain yang lebih kecil.' });
+      return res.status(413).json({ error: 'The photo is too large. Please try a smaller photo.' });
     }
   }
   next();
@@ -263,7 +263,7 @@ async function enforceQuota(req: Request, res: Response, next: NextFunction) {
       res.setHeader('Retry-After', String(day.secondsToReset));
       return res.status(429).json({
         code: 'QUOTA_EXCEEDED',
-        error: `Kuota harian habis (maks. ${DAILY_LIMIT_PER_IP} kartu per hari). Kuota akan reset pada pukul ${RESET_LABEL} (sekitar ${humanTimeLeft(day.secondsToReset)} lagi).`,
+        error: `Daily limit reached (max. ${DAILY_LIMIT_PER_IP} cards per day). Your quota resets at ${RESET_LABEL} (in about ${humanTimeLeft(day.secondsToReset)}).`,
         limit: DAILY_LIMIT_PER_IP,
         remaining: 0,
         resetAt: new Date(day.resetAtMs).toISOString(),
@@ -280,7 +280,7 @@ async function enforceQuota(req: Request, res: Response, next: NextFunction) {
       res.setHeader('Retry-After', String(day.secondsToReset));
       return res.status(429).json({
         code: 'GLOBAL_QUOTA_EXCEEDED',
-        error: `Kuota harian aplikasi sudah habis. Silakan coba lagi setelah pukul ${RESET_LABEL}.`,
+        error: `The app's daily quota has been used up. Please try again after ${RESET_LABEL}.`,
       });
     }
 
@@ -317,7 +317,7 @@ app.get('/api/quota', async (req, res) => {
     });
   } catch (err) {
     console.error('[Quota] gagal membaca kuota:', err);
-    return res.status(500).json({ error: 'Gagal membaca kuota.' });
+    return res.status(500).json({ error: 'Failed to read the quota.' });
   }
 });
 
@@ -336,7 +336,7 @@ app.post('/api/generate-card', originGuard, validateBody, enforceQuota, async (r
       const parsed = parseDataUrl(referenceImage);
       if (!parsed) {
         return res.status(400).json({
-          error: 'Format foto tidak valid. Gunakan JPG, PNG, atau WEBP.',
+          error: 'Invalid photo format. Please use JPG, PNG, or WEBP.',
         });
       }
 
@@ -372,7 +372,7 @@ app.post('/api/generate-card', originGuard, validateBody, enforceQuota, async (r
 
     const data = response.data?.[0];
     if (!data) {
-      return res.status(500).json({ error: 'API tidak mengembalikan data.' });
+      return res.status(500).json({ error: 'The API returned no data.' });
     }
 
     let generatedImageUrl = '';
@@ -385,7 +385,7 @@ app.post('/api/generate-card', originGuard, validateBody, enforceQuota, async (r
       const arrayBuffer = await imageFetch.arrayBuffer();
       generatedImageUrl = `data:image/png;base64,${Buffer.from(arrayBuffer).toString('base64')}`;
     } else {
-      return res.status(500).json({ error: 'Format tidak dikenali.' });
+      return res.status(500).json({ error: 'Unrecognized image format.' });
     }
 
     success = true;
@@ -393,7 +393,7 @@ app.post('/api/generate-card', originGuard, validateBody, enforceQuota, async (r
   } catch (error: any) {
     console.error('Error API:', error);
     return res.status(error?.status || 500).json({
-      error: error?.message || 'Gagal memproses gambar',
+      error: error?.message || 'Failed to process the image',
     });
   } finally {
     // Gagal membuat kartu = kuota pengguna tidak terpakai
@@ -408,13 +408,13 @@ app.post('/api/generate-card', originGuard, validateBody, enforceQuota, async (r
 app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
   if (res.headersSent) return next(err);
   if (err?.type === 'entity.too.large') {
-    return res.status(413).json({ error: 'Ukuran foto terlalu besar. Coba foto lain yang lebih kecil.' });
+    return res.status(413).json({ error: 'The photo is too large. Please try a smaller photo.' });
   }
   if (err?.type === 'entity.parse.failed') {
-    return res.status(400).json({ error: 'Permintaan tidak valid.' });
+    return res.status(400).json({ error: 'Invalid request.' });
   }
   console.error('Unhandled error:', err);
-  return res.status(500).json({ error: 'Terjadi kesalahan pada server.' });
+  return res.status(500).json({ error: 'A server error occurred.' });
 });
 
 // Mount Vite middleware HANYA saat development lokal

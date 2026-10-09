@@ -58,12 +58,12 @@ export const PromptInspectorSheet: React.FC<PromptInspectorSheetProps> = ({
           {copied ? (
             <>
               <Check className="w-4 h-4" />
-              Tersalin ke Clipboard!
+              Copied to Clipboard!
             </>
           ) : (
             <>
               <Copy className="w-4 h-4" />
-              Salin Prompt Lengkap
+              Copy Full Prompt
             </>
           )}
         </button>

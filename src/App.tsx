@@ -185,14 +185,14 @@ interface QuotaInfo {
   resetLabel: string; // mis. "00.01 WIB"
 }
 
-/** Sisa waktu menuju reset kuota, mis. "5 jam 12 menit" */
+/** Time left until the quota resets, e.g. "5 hr 12 min" */
 const formatTimeLeft = (resetAtIso: string): string => {
   const ms = new Date(resetAtIso).getTime() - Date.now();
-  if (Number.isNaN(ms) || ms <= 0) return 'sebentar lagi';
+  if (Number.isNaN(ms) || ms <= 0) return 'shortly';
   const totalMin = Math.ceil(ms / 60000);
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
-  return h > 0 ? `${h} jam ${m} menit` : `${m} menit`;
+  return h > 0 ? `${h} hr ${m} min` : `${m} min`;
 };
 
 export default function App() {
@@ -286,7 +286,7 @@ export default function App() {
     }
 
     if (!userImage) {
-      setErrorMessage('Upload foto wajah terlebih dahulu agar hasil mengikuti wajah Anda.');
+      setErrorMessage('Please upload a face photo first so the result matches your face.');
       return;
     }
 
@@ -318,9 +318,9 @@ export default function App() {
         data = await response.json();
       } catch {
         if (response.status === 413) {
-          throw new Error('Ukuran foto terlalu besar. Coba foto lain yang lebih kecil.');
+          throw new Error('The photo is too large. Please try a smaller photo.');
         }
-        throw new Error(`Server error (${response.status}). Coba lagi sebentar.`);
+        throw new Error(`Server error (${response.status}). Please try again in a moment.`);
       }
 
       if (!response.ok) {
@@ -335,7 +335,7 @@ export default function App() {
           });
           return;
         }
-        throw new Error(data.error || 'Gagal memproses gambar');
+        throw new Error(data.error || 'Failed to process the image');
       }
 
       if (data.imageUrl) {
@@ -347,7 +347,7 @@ export default function App() {
       }
     } catch (error: any) {
       console.error('Error generating card image:', error);
-      setErrorMessage(error.message || 'Terjadi kesalahan saat memproses gambar.');
+      setErrorMessage(error.message || 'Something went wrong while processing the image.');
     } finally {
       setIsGenerating(false);
       refreshQuota();
@@ -377,7 +377,7 @@ export default function App() {
 
   const handleShare = async () => {
     const title = `${generatedCard.rank} of ${generatedCard.suit} - AI Playing Card`;
-    const text = `Lihat kartu kerajaan custom saya: ${generatedCard.label}! Dibuat dengan AI Playing Card Generator.`;
+    const text = `Check out my custom royal playing card: ${generatedCard.label}! Made with AI Playing Card Generator.`;
     const url = window.location.href;
 
     if (navigator.share) {
@@ -395,7 +395,7 @@ export default function App() {
 
   const handleWhatsApp = () => {
     const text = encodeURIComponent(
-      `Lihat kartu remi kerajaan kustom saya: ${generatedCard.label}!\n${window.location.href}`
+      `Check out my custom royal playing card: ${generatedCard.label}!\n${window.location.href}`
     );
     safeOpenUrl(`https://api.whatsapp.com/send?text=${text}`);
   };
@@ -408,7 +408,7 @@ export default function App() {
 
   const handleTelegram = () => {
     const text = encodeURIComponent(
-      `Kartu remi kerajaan kustom saya: ${generatedCard.label}`
+      `My custom royal playing card: ${generatedCard.label}`
     );
     const url = encodeURIComponent(window.location.href);
     safeOpenUrl(`https://t.me/share/url?url=${url}&text=${text}`);
@@ -419,7 +419,7 @@ export default function App() {
       `AI Playing Card: ${generatedCard.label}`
     );
     const body = encodeURIComponent(
-      `Halo!\n\nLihat kartu remi kustom bertema kerajaan yang baru saja saya buat:\n\nKartu: ${generatedCard.label}\n\nBuat kartumu juga di: ${window.location.href}`
+      `Hi!\n\nCheck out the custom royal-themed playing card I just made:\n\nCard: ${generatedCard.label}\n\nMake your own at: ${window.location.href}`
     );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
@@ -492,12 +492,12 @@ export default function App() {
             >
               <div className="flex flex-col">
                 <span className="text-[15px] font-semibold text-[#1C1C1E]">
-                  Kustomisasi Nama, Pose &amp; Pakaian
+                  Customize Name, Pose &amp; Outfit
                 </span>
                 <span className="text-[12px] text-[#8E8E93]">
                   {hasCustom
-                    ? 'Aktif — tema & warna kartu tetap sama'
-                    : 'Opsional — kosongkan untuk tampilan default'}
+                    ? 'Active — card theme & colors stay the same'
+                    : 'Optional — leave empty for the default look'}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -517,12 +517,12 @@ export default function App() {
                 {/* Nama Kartu (huruf sudut & nama karakter) */}
                 <div className="flex flex-col gap-2">
                   <span className="text-[13px] font-medium text-[#3A3A3C]">
-                    Nama Kartu
+                    Card Name
                   </span>
 
                   {isJokerSelected ? (
                     <p className="text-[12px] text-[#8E8E93]">
-                      Nama kartu tidak berlaku untuk Joker.
+                      Card name does not apply to Jokers.
                     </p>
                   ) : (
                     <>
@@ -559,7 +559,7 @@ export default function App() {
                             htmlFor="custom-rank-letter"
                             className="text-[12px] text-[#8E8E93]"
                           >
-                            Huruf sudut
+                            Corner letter
                           </label>
                           <input
                             id="custom-rank-letter"
@@ -582,7 +582,7 @@ export default function App() {
                             htmlFor="custom-rank-name"
                             className="text-[12px] text-[#8E8E93]"
                           >
-                            Nama karakter
+                            Character name
                           </label>
                           <input
                             id="custom-rank-name"
@@ -600,8 +600,8 @@ export default function App() {
                       </div>
 
                       <span className="text-[11px] text-[#8E8E93]">
-                        Kosongkan untuk memakai nama bawaan ({selectedCard.rankLetter} ·{' '}
-                        {selectedCard.rank}). Huruf sudut maks. {RANK_LETTER_MAX_LENGTH} karakter.
+                        Leave empty to use the default name ({selectedCard.rankLetter} ·{' '}
+                        {selectedCard.rank}). Corner letter max. {RANK_LETTER_MAX_LENGTH} characters.
                       </span>
                     </>
                   )}
@@ -618,7 +618,7 @@ export default function App() {
                     onChange={(e) => setCustomPose(e.target.value.slice(0, CUSTOM_TEXT_MAX_LENGTH))}
                     maxLength={CUSTOM_TEXT_MAX_LENGTH}
                     rows={2}
-                    placeholder="Contoh: berdiri gagah sambil menghunus pedang ke atas, tersenyum percaya diri"
+                    placeholder="Example: standing proudly, raising a sword overhead, smiling confidently"
                     className="select-text w-full resize-none rounded-xl border border-[#D1D1D6] bg-[#F2F2F7] px-3 py-2.5 text-[16px] leading-snug text-[#1C1C1E] placeholder:text-[#AEAEB2] focus:outline-none focus:border-[#007AFF] focus:bg-white"
                   />
                   <span className="text-[11px] text-[#8E8E93] text-right">
@@ -629,7 +629,7 @@ export default function App() {
                 {/* Pakaian */}
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="custom-outfit" className="text-[13px] font-medium text-[#3A3A3C]">
-                    Pakaian
+                    Outfit
                   </label>
                   <textarea
                     id="custom-outfit"
@@ -637,7 +637,7 @@ export default function App() {
                     onChange={(e) => setCustomOutfit(e.target.value.slice(0, CUSTOM_TEXT_MAX_LENGTH))}
                     maxLength={CUSTOM_TEXT_MAX_LENGTH}
                     rows={2}
-                    placeholder="Contoh: beskap Jawa hitam dengan blangkon dan keris emas"
+                    placeholder="Example: a black Javanese beskap jacket with a blangkon headdress and a golden keris"
                     className="select-text w-full resize-none rounded-xl border border-[#D1D1D6] bg-[#F2F2F7] px-3 py-2.5 text-[16px] leading-snug text-[#1C1C1E] placeholder:text-[#AEAEB2] focus:outline-none focus:border-[#007AFF] focus:bg-white"
                   />
                   <span className="text-[11px] text-[#8E8E93] text-right">
@@ -652,7 +652,7 @@ export default function App() {
                     className="self-start flex items-center gap-1.5 text-[13px] font-medium text-[#007AFF] cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    Kembalikan ke default
+                    Reset to default
                   </button>
                 )}
               </div>
@@ -671,17 +671,17 @@ export default function App() {
             {isGenerating ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Memproses Kartu...</span>
+                <span>Generating Card...</span>
               </>
             ) : (
-              <span>Generate Gambar</span>
+              <span>Generate Image</span>
             )}
           </button>
 
           {/* Info sisa kuota harian */}
           {quota && quota.remaining > 0 && (
             <p className="text-center text-[12px] text-[#8E8E93]">
-              Sisa kuota hari ini: <span className="font-semibold text-[#3A3A3C]">{quota.remaining}</span> dari {quota.limit} kartu • reset pukul {quota.resetLabel}
+              Remaining today: <span className="font-semibold text-[#3A3A3C]">{quota.remaining}</span> of {quota.limit} cards • resets at {quota.resetLabel}
             </p>
           )}
 
@@ -692,10 +692,10 @@ export default function App() {
               className="p-3.5 bg-[#FF9500]/10 border border-[#FF9500]/30 rounded-xl text-center animate-fade-in"
             >
               <p className="text-[14px] font-semibold text-[#B26A00]">
-                Kuota harian habis
+                Daily limit reached
               </p>
               <p className="text-[13px] text-[#B26A00] mt-0.5">
-                Maksimal {quota.limit} kartu per hari. Kuota akan reset pada pukul {quota.resetLabel} (sekitar {formatTimeLeft(quota.resetAt)} lagi).
+                Maximum {quota.limit} cards per day. Your quota resets at {quota.resetLabel} (in about {formatTimeLeft(quota.resetAt)}).
               </p>
             </div>
           )}

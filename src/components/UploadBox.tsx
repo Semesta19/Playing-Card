@@ -44,7 +44,7 @@ export const UploadBox: React.FC<UploadBoxProps> = ({
     <div className="bg-white rounded-2xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)] border border-[#E5E5EA]">
       {/* iOS Header label */}
       <div className="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider mb-2.5 px-0.5">
-        Upload Foto Referensi
+        Upload Reference Photo
       </div>
 
       <input
@@ -65,7 +65,7 @@ export const UploadBox: React.FC<UploadBoxProps> = ({
             <Camera className="w-5 h-5" />
           </div>
           <span className="text-[15px] font-medium text-[#8E8E93] group-hover:text-[#1C1C1E] transition-colors">
-            Pilih Foto
+            Choose Photo
           </span>
         </button>
       ) : (
@@ -77,7 +77,7 @@ export const UploadBox: React.FC<UploadBoxProps> = ({
           <div className="relative w-24 h-full rounded-lg overflow-hidden border border-[#E5E5EA] bg-black/5 shrink-0">
             <img
               src={imagePreview}
-              alt="Foto referensi thumbnail"
+              alt="Reference photo thumbnail"
               className="w-full h-full object-cover"
             />
           </div>
@@ -86,14 +86,14 @@ export const UploadBox: React.FC<UploadBoxProps> = ({
           <div className="flex-1 flex flex-col justify-center min-w-0 pr-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-[#34C759]">
               <span className="w-2 h-2 rounded-full bg-[#34C759]" />
-              Foto Terpilih
+              Photo Selected
             </div>
             <p className="text-[13px] text-[#8E8E93] truncate mt-0.5">
-              Wajah subjek siap dipetakan
+              Subject's face is ready to be mapped
             </p>
             <div className="flex items-center gap-1 text-[13px] font-medium text-[#007AFF] mt-2 group-hover:underline">
               <RefreshCw className="w-3.5 h-3.5" />
-              Ganti Foto
+              Change Photo
             </div>
           </div>
 
@@ -102,7 +102,7 @@ export const UploadBox: React.FC<UploadBoxProps> = ({
             type="button"
             onClick={handleClear}
             className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[#8E8E93]/20 hover:bg-[#8E8E93]/40 text-[#1C1C1E] flex items-center justify-center transition-colors"
-            title="Hapus foto"
+            title="Remove photo"
           >
             <X className="w-4 h-4" />
           </button>

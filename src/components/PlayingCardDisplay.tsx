@@ -653,7 +653,7 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
             <div className="absolute inset-0 bg-black/35 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center z-20">
               <div className="w-9 h-9 rounded-full border-3 border-white/30 border-t-white animate-spin mb-3" />
               <span className="text-white text-xs font-medium tracking-wide">
-                Menghasilkan Kartu...
+                Generating Card...
               </span>
               <span className="text-white/70 text-[11px] mt-0.5 font-mono">
                 GPT AI
@@ -672,14 +672,14 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
             onClick={() => setSavePreview(null)}
           >
             <p className="text-white text-[15px] font-medium text-center mb-1">
-              Tekan lama gambar, lalu pilih “Simpan ke Foto”
+              Press and hold the image, then choose “Add to Photos”
             </p>
             <p className="text-white/60 text-[12px] text-center mb-4">
-              Ketuk di luar gambar untuk menutup
+              Tap outside the image to close
             </p>
             <img
               src={savePreview}
-              alt="Kartu untuk disimpan"
+              alt="Card to save"
               onClick={(e) => e.stopPropagation()}
               className="max-h-[72vh] max-w-full rounded-2xl shadow-2xl"
               style={{
@@ -693,7 +693,7 @@ export const PlayingCardDisplay = forwardRef<PlayingCardDisplayRef, PlayingCardD
               onClick={() => setSavePreview(null)}
               className="mt-5 px-6 py-2.5 rounded-full bg-white/15 text-white text-[15px] font-medium cursor-pointer"
             >
-              Tutup
+              Close
             </button>
           </div>
         )}

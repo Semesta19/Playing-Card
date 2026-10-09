@@ -43,7 +43,7 @@ export const ActionToolbar: React.FC<ActionToolbarProps> = ({
           type="button"
           onClick={() => {
             onDownload();
-            showToast('Mengunduh kartu...');
+            showToast('Downloading card...');
           }}
           className="w-10 h-10 rounded-full flex items-center justify-center text-[#1C1C1E] hover:bg-[#F2F2F7] active:bg-[#E5E5EA] active:scale-95 transition-all cursor-pointer"
           title="Download Card"
@@ -57,7 +57,7 @@ export const ActionToolbar: React.FC<ActionToolbarProps> = ({
           type="button"
           onClick={() => {
             onShare();
-            showToast('Membuka menu bagikan...');
+            showToast('Opening share menu...');
           }}
           className="w-10 h-10 rounded-full flex items-center justify-center text-[#1C1C1E] hover:bg-[#F2F2F7] active:bg-[#E5E5EA] active:scale-95 transition-all cursor-pointer"
           title="Share Card"
@@ -84,7 +84,7 @@ export const ActionToolbar: React.FC<ActionToolbarProps> = ({
           type="button"
           onClick={() => {
             onWhatsApp();
-            showToast('Membuka WhatsApp...');
+            showToast('Opening WhatsApp...');
           }}
           className="w-10 h-10 rounded-full flex items-center justify-center text-[#25D366] hover:bg-[#25D366]/10 active:scale-95 transition-all cursor-pointer"
           title="Share to WhatsApp"
@@ -100,7 +100,7 @@ export const ActionToolbar: React.FC<ActionToolbarProps> = ({
           type="button"
           onClick={() => {
             onInstagram();
-            showToast('Membuka Instagram...');
+            showToast('Opening Instagram...');
           }}
           className="w-10 h-10 rounded-full flex items-center justify-center text-[#E4405F] hover:bg-[#E4405F]/10 active:scale-95 transition-all cursor-pointer"
           title="Share to Instagram"
@@ -116,7 +116,7 @@ export const ActionToolbar: React.FC<ActionToolbarProps> = ({
           type="button"
           onClick={() => {
             onTelegram();
-            showToast('Membuka Telegram...');
+            showToast('Opening Telegram...');
           }}
           className="w-10 h-10 rounded-full flex items-center justify-center text-[#2AABEE] hover:bg-[#2AABEE]/10 active:scale-95 transition-all cursor-pointer"
           title="Share to Telegram"
@@ -132,7 +132,7 @@ export const ActionToolbar: React.FC<ActionToolbarProps> = ({
           type="button"
           onClick={() => {
             onEmail();
-            showToast('Membuka Email...');
+            showToast('Opening Email...');
           }}
           className="w-10 h-10 rounded-full flex items-center justify-center text-[#1C1C1E] hover:bg-[#F2F2F7] active:bg-[#E5E5EA] active:scale-95 transition-all cursor-pointer"
           title="Share via Email"
